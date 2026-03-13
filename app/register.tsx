@@ -3,32 +3,23 @@ import { useRouter } from 'expo-router';
 import RegisterScreen from '../screens/RegisterScreen';
 
 /**
- * Register Screen - Wrapped with Expo Router Navigation
- * This manages the registration UI and handles navigation to login
+ * Register screen wrapper – navigate after successful signup.
  */
 export default function RegisterPage() {
   const router = useRouter();
 
   const handleNavigateToLogin = () => {
-    router.back();
+    router.push('/login');
   };
 
-  const handleRegisterPress = (data: {
-    name: string;
-    email: string;
-    password: string;
-    confirmPassword: string;
-  }) => {
-    console.log('Registration attempt:', data);
-    // TODO: Call your authentication service
-    // Once registered, navigate to main app:
-    // router.replace('/(auth)/(tabs)');
+  const handleRegisterSuccess = () => {
+    router.replace('/home');
   };
 
   return (
     <RegisterScreen
       onNavigateToLogin={handleNavigateToLogin}
-      onRegisterPress={handleRegisterPress}
+      onRegisterSuccess={handleRegisterSuccess}
     />
   );
 }

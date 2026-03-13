@@ -15,18 +15,19 @@ import AuthInput from '../components/AuthInput';
 import AuthButton from '../components/AuthButton';
 import Colors from '../constants/colors';
 
+import { loginUser } from '../services/authService';
+
 interface LoginScreenProps {
   onNavigateToRegister?: () => void;
+  onLoginSuccess?: () => void;
 }
 
-// ✅ Backend API URL
-const API_URL = 'http://192.168.0.5:8000/api/login/';
-
-const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister, onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [authError, setAuthError] = useState('');
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
@@ -44,36 +45,38 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister }) => {
   const handleLogin = async () => {
     if (!validateForm()) return;
 
+    setAuthError('');
     setLoading(true);
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+    const { success, error } = await loginUser({ email, password });
+    setLoading(false);
 
-      const data = await response.json();
+    if (success) {
+      onLoginSuccess && onLoginSuccess();
+      Alert.alert('Success', 'Logged in successfully!');
+    } else {
+      const message = error || 'Invalid email or password';
+      const lower = message.toLowerCase();
 
-      if (response.ok) {
-        Alert.alert('Success', 'Logged in successfully!');
-        // TODO: Save token or navigate to Home screen
+      if (
+        lower.includes('invalid email or password') ||
+        lower.includes('invalid credentials') ||
+        lower.includes('login failed')
+      ) {
+        setErrors({
+          email: 'ID or email is incorrect',
+          password: 'Password is incorrect',
+        });
+        setAuthError('Wrong ID/email or password. Please try again.');
       } else {
-       
-        const errorMessages = Object.values(data)
-          .flat()
-          .join('\n');
-        Alert.alert('Error', errorMessages || 'Login failed');
+        setAuthError(message);
       }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Network error');
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.bgOrbTop} />
+      <View style={styles.bgOrbBottom} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
@@ -82,27 +85,46 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister }) => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
           <View style={styles.headerSection}>
-            <View style={styles.logoContainer}>
-              <MaterialIcons name="trending-up" size={40} color={Colors.primary} />
+            <View style={styles.logoWrap}>
+              <View style={styles.logoContainer}>
+                <MaterialIcons name="account-balance-wallet" size={32} color={Colors.white} />
+              </View>
             </View>
-            <Text style={styles.appTitle}>FinBit</Text>
-            <Text style={styles.subtitle}>Manage your money smarter</Text>
+            <Text style={styles.appEyebrow}>FINBIT PERSONAL FINANCE</Text>
+            <Text style={styles.appTitle}>Own your money, every day.</Text>
+            <Text style={styles.subtitle}>Sign in to track spending, income, and goals in one secure place.</Text>
           </View>
 
-          {/* Welcome */}
-          <View style={styles.welcomeSection}>
-            <Text style={styles.welcomeTitle}>Welcome Back</Text>
-            <Text style={styles.welcomeDescription}>Sign in to your account</Text>
+          <View style={styles.metricRow}>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricValue}>24/7</Text>
+              <Text style={styles.metricLabel}>Account Access</Text>
+            </View>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricValue}>256-bit</Text>
+              <Text style={styles.metricLabel}>Data Security</Text>
+            </View>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricValue}>Real-time</Text>
+              <Text style={styles.metricLabel}>Insights</Text>
+            </View>
           </View>
 
-          {/* Form */}
-          <View style={styles.formSection}>
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>Welcome back</Text>
+            <Text style={styles.formSubtitle}>Continue where you left off</Text>
+
             <AuthInput
               placeholder="Email Address"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setAuthError('');
+                if (errors.email) {
+                  setErrors((prev) => ({ ...prev, email: undefined }));
+                }
+              }}
               icon="email"
               keyboardType="email-address"
               autoCapitalize="none"
@@ -112,12 +134,20 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister }) => {
             <AuthInput
               placeholder="Password"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                setAuthError('');
+                if (errors.password) {
+                  setErrors((prev) => ({ ...prev, password: undefined }));
+                }
+              }}
               icon="lock"
               isPassword
               error={errors.password}
               editable={!loading}
             />
+
+            {!!authError && <Text style={styles.authErrorText}>{authError}</Text>}
 
             <TouchableOpacity style={styles.forgotPasswordContainer}>
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
@@ -134,24 +164,21 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister }) => {
 
             <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>new to FinBit?</Text>
               <View style={styles.dividerLine} />
             </View>
 
             <View style={styles.signUpContainer}>
-              <Text style={styles.signUpText}>Don't have an account? </Text>
+              <Text style={styles.signUpText}>No account yet? </Text>
               <TouchableOpacity onPress={onNavigateToRegister}>
-                <Text style={styles.signUpLink}>Register</Text>
+                <Text style={styles.signUpLink}>Create one</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          <View style={styles.footerSection}>
-            <Text style={styles.footerText}>
-              By signing in, you agree to our{' '}
-              <Text style={styles.footerLink}>Terms of Service</Text> and{' '}
-              <Text style={styles.footerLink}>Privacy Policy</Text>
-            </Text>
+          <View style={styles.trustPanel}>
+            <MaterialIcons name="verified-user" size={18} color={Colors.success} />
+            <Text style={styles.trustText}>Bank-level encryption with private, local-first session handling.</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -160,35 +187,149 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister }) => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.background },
+  safeArea: { flex: 1, backgroundColor: '#F1F8F8' },
   keyboardAvoid: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 40, justifyContent: 'space-between' },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 },
 
-  headerSection: { alignItems: 'center', marginBottom: 40 },
-  logoContainer: { width: 70, height: 70, borderRadius: 16, backgroundColor: Colors.lightGray, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  appTitle: { fontSize: 32, fontWeight: '700', color: Colors.textPrimary, letterSpacing: -0.5, marginBottom: 8 },
-  subtitle: { fontSize: 14, color: Colors.textSecondary, fontWeight: '500' },
+  bgOrbTop: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(13, 110, 110, 0.08)',
+    top: -90,
+    right: -70,
+  },
+  bgOrbBottom: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(16, 185, 129, 0.09)',
+    bottom: -80,
+    left: -60,
+  },
 
-  welcomeSection: { marginBottom: 32 },
-  welcomeTitle: { fontSize: 24, fontWeight: '600', color: Colors.textPrimary, marginBottom: 8 },
-  welcomeDescription: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20 },
+  headerSection: { marginBottom: 22 },
+  logoWrap: { marginBottom: 14 },
+  logoContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 16,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 18,
+    elevation: 4,
+  },
+  appEyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.1,
+    color: Colors.primaryDark,
+    marginBottom: 8,
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#103434',
+    lineHeight: 38,
+    letterSpacing: -0.7,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#365A5A',
+    fontWeight: '500',
+    lineHeight: 21,
+  },
 
-  formSection: { marginBottom: 24 },
-  forgotPasswordContainer: { alignSelf: 'flex-end', marginBottom: 20, marginTop: -8 },
-  forgotPasswordText: { fontSize: 13, color: Colors.primary, fontWeight: '600' },
-  loginButton: { marginBottom: 20 },
+  metricRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+    gap: 8,
+  },
+  metricCard: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#DCEEEE',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+  },
+  metricValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.primaryDark,
+    marginBottom: 4,
+  },
+  metricLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
 
-  dividerContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.mediumGray },
-  dividerText: { marginHorizontal: 12, fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
+  formCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#D4E9E9',
+    padding: 16,
+    marginBottom: 18,
+  },
+  formTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  formSubtitle: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginBottom: 14,
+  },
+  forgotPasswordContainer: { alignSelf: 'flex-end', marginBottom: 18, marginTop: -4 },
+  forgotPasswordText: { fontSize: 13, color: Colors.primaryDark, fontWeight: '700' },
+  loginButton: { marginBottom: 16, borderRadius: 14 },
+  authErrorText: {
+    fontSize: 13,
+    color: Colors.error,
+    fontWeight: '600',
+    marginTop: 4,
+    marginBottom: 10,
+  },
+
+  dividerContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 10 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#D4E0E0' },
+  dividerText: { marginHorizontal: 12, fontSize: 12, color: Colors.textSecondary, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.6 },
 
   signUpContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
   signUpText: { fontSize: 14, color: Colors.textSecondary, fontWeight: '500' },
-  signUpLink: { fontSize: 14, color: Colors.primary, fontWeight: '600' },
+  signUpLink: { fontSize: 14, color: Colors.primaryDark, fontWeight: '700' },
 
-  footerSection: { marginTop: 20 },
-  footerText: { fontSize: 12, color: Colors.textTertiary, textAlign: 'center', lineHeight: 18 },
-  footerLink: { color: Colors.primary, fontWeight: '600' },
+  trustPanel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    borderWidth: 1,
+    borderColor: '#D7E8E8',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  trustText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#4A6363',
+    fontWeight: '500',
+    lineHeight: 17,
+  },
 });
 
 export default LoginScreen;

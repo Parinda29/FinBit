@@ -1,18 +1,45 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { useRouter } from 'expo-router';
 import Colors from '../constants/colors';
 import CustomButton from '../components/CustomButton';
+import { createTransaction } from '../services/transactionService';
 
 const AddTransactionScreen: React.FC = () => {
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [type, setType] = useState<'income' | 'expense'>('income');
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    console.log({ title, amount, category, type });
-    // Call API or store transaction
+  const handleSave = async () => {
+    if (!title || !amount || !category) {
+      Alert.alert('Missing fields', 'Please fill in all required fields');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const resp = await createTransaction({
+        title,
+        amount: parseFloat(amount),
+        category,
+        type,
+      });
+      if (resp && resp.id) {
+        Alert.alert('Success', 'Transaction saved');
+        router.back();
+      } else {
+        Alert.alert('Error', resp?.error || 'Failed to save');
+      }
+    } catch (e) {
+      console.error('Save transaction error', e);
+      Alert.alert('Error', 'Network error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

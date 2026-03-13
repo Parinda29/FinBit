@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,30 +7,65 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import Colors from '../constants/colors';
 import CustomButton from '../components/CustomButton';
 import AuthInput from '../components/AuthInput';
 import { MaterialIcons } from '@expo/vector-icons';
+import { fetchUserProfile, updateUserProfile, logoutUser } from '../services/authService';
 
 const ProfileScreen: React.FC = () => {
+  // navigation
+  const router = useRouter();
+
   // User info state
-  const [name, setName] = useState('John Doe');
-  const [email, setEmail] = useState('john.doe@example.com');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [editing, setEditing] = useState(false);
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const resp = await fetchUserProfile();
+      if (resp && resp.user) {
+        setName(resp.user.name || '');
+        setEmail(resp.user.email || '');
+      }
+      setLoading(false);
+    };
+    loadProfile();
+  }, []);
 
   // Save profile changes
-  const handleSave = () => {
-    // You can integrate API call here
-    alert('Profile updated!');
-    setEditing(false);
+  const handleSave = async () => {
+    const payload: any = { name, email };
+    if (password) payload.password = password;
+    const resp = await updateUserProfile(payload);
+    if (resp && resp.success) {
+      Alert.alert('Success', 'Profile updated');
+      setEditing(false);
+      setPassword('');
+    } else {
+      Alert.alert('Error', resp.error || 'Could not update profile');
+    }
   };
 
   // Logout
-  const handleLogout = () => {
-    // Implement logout logic
-    alert('Logged out!');
+  const handleLogout = async () => {
+    await logoutUser();
+    router.replace('/login' as any);
   };
 
   return (
@@ -129,6 +164,7 @@ const ProfileScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.background },
   scrollContent: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 40 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   avatarContainer: {
     alignSelf: 'center',

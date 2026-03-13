@@ -4,7 +4,7 @@
  */
 
 export interface UserData {
-  id?: string;
+  id?: number | string;
   name: string;
   email: string;
   createdAt?: Date;
@@ -24,7 +24,9 @@ export interface RegisterData extends AuthCredentials {
 export interface AuthResponse {
   success: boolean;
   user?: UserData;
-  token?: string;
+  // JWT tokens returned by the backend
+  accessToken?: string;
+  refreshToken?: string;
   message?: string;
   error?: string;
 }

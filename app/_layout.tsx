@@ -19,6 +19,7 @@ export default function RootLayout() {
         {/* Auth screens */}
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
+        <Stack.Screen name="home" />
       </Stack>
       <StatusBar style="auto" />
     </>

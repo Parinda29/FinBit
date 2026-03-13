@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import BalanceCard from '../components/BalanceCard';
 import QuickActionButton from '../components/QuickActionButton';
@@ -6,11 +6,31 @@ import TransactionCard, { TransactionCardProps } from '../components/Transaction
 import NotificationCard, { NotificationCardProps } from '../components/NotificationCard';
 import PieChartCard, { PieChartData } from '../components/PieChartCard';
 import Colors from '../constants/colors';
+import { getSummary } from '../services/transactionService';
 
 const HomeScreen: React.FC = () => {
-  const balance = 2540.75;
-  const income = 3200.5;
-  const expenses = 659.75;
+  // router removed, home is not navigable in minimal setup
+
+  const [balance, setBalance] = useState(0);
+  const [income, setIncome] = useState(0);
+  const [expenses, setExpenses] = useState(0);
+
+  // load summary from backend
+  useEffect(() => {
+    const loadSummary = async () => {
+      try {
+        const resp = await getSummary();
+        if (resp && resp.balance !== undefined) {
+          setBalance(resp.balance);
+          setIncome(resp.income);
+          setExpenses(resp.expense);
+        }
+      } catch (e) {
+        console.warn('Failed to load summary', e);
+      }
+    };
+    loadSummary();
+  }, []);
 
   //  Explicit types
   const transactions: TransactionCardProps[] = [
@@ -40,7 +60,7 @@ const HomeScreen: React.FC = () => {
 
       <View style={styles.quickActionsContainer}>
         <QuickActionButton title="Add Income" onPress={() => {}} color={Colors.success} />
-        <QuickActionButton title="Add Expense" onPress={() => {}} color={Colors.error} />
+      <QuickActionButton title="Add Expense" onPress={() => {}} color={Colors.error} />
       </View>
 
       <PieChartCard data={categoryData} title="Spending by Category" />

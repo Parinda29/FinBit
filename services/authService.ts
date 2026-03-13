@@ -8,7 +8,52 @@
 
 import { AuthCredentials, RegisterData, AuthResponse, UserData } from '../types/auth';
 
-const API_BASE_URL = 'https://your-api.com/api'; // Replace with your API
+import api from './api';
+
+// in-memory token storage (could be AsyncStorage later)
+let accessToken: string | null = null;
+let refreshTokenValue: string | null = null;
+
+export const setTokens = (access: string, refresh?: string) => {
+  accessToken = access;
+  if (refresh) refreshTokenValue = refresh;
+};
+
+export const getAccessToken = () => accessToken;
+export const getRefreshToken = () => refreshTokenValue;
+
+const API_BASE_URL = api.base; // pointing at /api/users
+
+const parseApiError = (payload: any, fallback: string): string => {
+  if (!payload) return fallback;
+  if (typeof payload.error === 'string' && payload.error.trim()) return payload.error;
+  if (typeof payload.message === 'string' && payload.message.trim()) return payload.message;
+
+  if (payload.errors && typeof payload.errors === 'object') {
+    for (const key of Object.keys(payload.errors)) {
+      const value = payload.errors[key];
+      if (Array.isArray(value) && value.length > 0) {
+        return `${key}: ${String(value[0])}`;
+      }
+      if (typeof value === 'string' && value.trim()) {
+        return `${key}: ${value}`;
+      }
+    }
+  }
+
+  return fallback;
+};
+
+const parseResponseBody = async (response: Response): Promise<any> => {
+  const raw = await response.text();
+  if (!raw) return {};
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { message: raw };
+  }
+};
 
 /**
  * Login user with email and password
@@ -19,7 +64,7 @@ export const loginUser = async (
   credentials: AuthCredentials
 ): Promise<AuthResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -27,29 +72,36 @@ export const loginUser = async (
       body: JSON.stringify(credentials),
     });
 
-    const data = await response.json();
+    const data = await parseResponseBody(response);
 
     if (!response.ok) {
       return {
         success: false,
-        error: data.message || 'Login failed. Please try again.',
+        error: parseApiError(
+          data,
+          response.status >= 500
+            ? 'Server error while logging in. Please check backend logs.'
+            : 'Login failed. Please try again.'
+        ),
       };
     }
 
-    // TODO: Store token securely
-    // AsyncStorage.setItem('authToken', data.token);
+    // save tokens in memory (replace with secure storage later)
+    setTokens(data.access, data.refresh);
+    // TODO: store tokens in AsyncStorage or secure store as needed
 
     return {
       success: true,
       user: data.user,
-      token: data.token,
+      accessToken: data.access,
+      refreshToken: data.refresh,
       message: 'Login successful',
     };
   } catch (error) {
     console.error('Login error:', error);
     return {
       success: false,
-      error: 'Network error. Please check your connection.',
+      error: `Network error. Unable to reach ${api.host}.`,
     };
   }
 };
@@ -65,7 +117,7 @@ export const registerUser = async (
   try {
     const { confirmPassword, ...registerPayload } = data;
 
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    const response = await fetch(`${API_BASE_URL}/register/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -73,29 +125,36 @@ export const registerUser = async (
       body: JSON.stringify(registerPayload),
     });
 
-    const responseData = await response.json();
+    const responseData = await parseResponseBody(response);
 
     if (!response.ok) {
       return {
         success: false,
-        error: responseData.message || 'Registration failed. Please try again.',
+        error: parseApiError(
+          responseData,
+          response.status >= 500
+            ? 'Server error while registering. Please check backend logs.'
+            : 'Registration failed. Please try again.'
+        ),
       };
     }
 
-    // TODO: Store token securely
-    // AsyncStorage.setItem('authToken', responseData.token);
+    // save tokens in memory for immediate use
+    setTokens(responseData.access, responseData.refresh);
+    // TODO: persist securely (AsyncStorage, SecureStore, etc.)
 
     return {
       success: true,
       user: responseData.user,
-      token: responseData.token,
+      accessToken: responseData.access,
+      refreshToken: responseData.refresh,
       message: 'Registration successful',
     };
   } catch (error) {
     console.error('Registration error:', error);
     return {
       success: false,
-      error: 'Network error. Please check your connection.',
+      error: `Network error. Unable to reach ${api.host}.`,
     };
   }
 };
@@ -105,13 +164,44 @@ export const registerUser = async (
  */
 export const logoutUser = async (): Promise<void> => {
   try {
-    // TODO: Make logout API call if needed
-    // TODO: Clear stored token
-    // AsyncStorage.removeItem('authToken');
+    // remove tokens from memory
+    accessToken = null;
+    refreshTokenValue = null;
+    // TODO: clear persisted storage when implemented
     console.log('User logged out');
   } catch (error) {
     console.error('Logout error:', error);
   }
+};
+
+/**
+ * Retrieve authenticated user's profile data.
+ */
+export const fetchUserProfile = async (): Promise<any> => {
+  const token = getAccessToken();
+  const resp = await fetch(`${API_BASE_URL}/profile/`, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: token ? `Token ${token}` : '',
+    },
+  });
+  return resp.json();
+};
+
+/**
+ * Update authenticated user's profile.
+ */
+export const updateUserProfile = async (data: Partial<UserData>): Promise<any> => {
+  const token = getAccessToken();
+  const resp = await fetch(`${API_BASE_URL}/profile/`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: token ? `Token ${token}` : '',
+    },
+    body: JSON.stringify(data),
+  });
+  return resp.json();
 };
 
 /**
@@ -150,7 +240,7 @@ export const getUserData = async (): Promise<UserData | null> => {
  * Refresh authentication token
  * @returns New authentication response
  */
-export const refreshToken = async (): Promise<AuthResponse> => {
+export const refreshAuthToken = async (): Promise<AuthResponse> => {
   try {
     // TODO: Implement token refresh logic
     // const currentToken = await AsyncStorage.getItem('authToken');
@@ -180,5 +270,5 @@ export default {
   logoutUser,
   isAuthenticated,
   getUserData,
-  refreshToken,
+  refreshAuthToken,
 };
