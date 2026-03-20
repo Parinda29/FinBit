@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import SMSListener from './sms-listener';
 
 /**
  * Root Layout - Clean Stack Navigation for FinBit Auth
@@ -9,10 +10,12 @@ import 'react-native-reanimated';
 export default function RootLayout() {
   return (
     <>
+      {/* SMS Listener added here */}
+      <SMSListener />
+
       <Stack
         screenOptions={{
           headerShown: false,
-          animationEnabled: true,
         }}
         initialRouteName="login"
       >
@@ -21,6 +24,7 @@ export default function RootLayout() {
         <Stack.Screen name="register" />
         <Stack.Screen name="home" />
       </Stack>
+
       <StatusBar style="auto" />
     </>
   );
