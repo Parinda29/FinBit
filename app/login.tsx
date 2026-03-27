@@ -14,7 +14,7 @@ export default function LoginPage() {
 
   const handleLoginSuccess = () => {
     // redirect to home after successful login
-    router.replace('/home');
+    router.replace('/(tabs)');
   };
 
   return (

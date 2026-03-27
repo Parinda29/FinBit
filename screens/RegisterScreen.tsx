@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   SafeAreaView,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
@@ -69,13 +68,20 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onNavigateToLogin, onRe
     setLoading(false);
 
     if (success) {
-      onRegisterSuccess && onRegisterSuccess();
-      Alert.alert('Success', 'Account created successfully!');
       setName('');
       setEmail('');
       setPassword('');
       setConfirmPassword('');
       setAgreedToTerms(false);
+
+      Alert.alert('Success', 'Account created successfully!', [
+        {
+          text: 'Continue',
+          onPress: () => {
+            onRegisterSuccess && onRegisterSuccess();
+          },
+        },
+      ]);
     } else {
       Alert.alert('Error', error || 'Registration failed');
     }
@@ -83,21 +89,23 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onNavigateToLogin, onRe
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.bgOrbTop} />
-      <View style={styles.bgOrbBottom} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <TouchableOpacity style={styles.backButton} onPress={onNavigateToLogin}>
-            <MaterialIcons name="arrow-back" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
+        <View style={styles.content}>
+          <View style={styles.topRow}>
+            <TouchableOpacity style={styles.backButton} onPress={onNavigateToLogin}>
+              <MaterialIcons name="arrow-back" size={22} color={Colors.textPrimary} />
+            </TouchableOpacity>
+
+            <View style={styles.pillBadge}>
+              <MaterialIcons name="shield" size={14} color={Colors.primaryDark} />
+              <Text style={styles.pillBadgeText}>Protected</Text>
+            </View>
+          </View>
 
           <View style={styles.headerSection}>
-            <View style={styles.logoContainer}>
-              <MaterialIcons name="savings" size={34} color={Colors.white} />
-            </View>
             <Text style={styles.appEyebrow}>GET STARTED</Text>
             <Text style={styles.appTitle}>Build better money habits.</Text>
             <Text style={styles.subtitle}>Create your FinBit account and get instant visibility into your cash flow.</Text>
@@ -150,84 +158,78 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onNavigateToLogin, onRe
             <MaterialIcons name="lock" size={16} color={Colors.success} />
             <Text style={styles.footNoteText}>Your financial records stay private and encrypted.</Text>
           </View>
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F2F8F7' },
+  safeArea: { flex: 1, backgroundColor: Colors.background },
   keyboardAvoid: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 32 },
+  content: { flex: 1, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 16 },
 
-  bgOrbTop: {
-    position: 'absolute',
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    backgroundColor: 'rgba(13, 110, 110, 0.09)',
-    top: -70,
-    left: -60,
-  },
-  bgOrbBottom: {
-    position: 'absolute',
-    width: 230,
-    height: 230,
-    borderRadius: 115,
-    backgroundColor: 'rgba(16, 185, 129, 0.08)',
-    bottom: -90,
-    right: -70,
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
   },
 
   backButton: {
     width: 42,
     height: 42,
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: Colors.white,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#DCEAEA',
+    borderColor: Colors.border,
+  },
+  pillBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
+    backgroundColor: '#F5F3FF',
+  },
+  pillBadgeText: {
+    fontSize: 12,
+    color: Colors.primaryDark,
+    fontWeight: '700',
   },
 
   headerSection: { marginBottom: 16 },
-  logoContainer: {
-    width: 58,
-    height: 58,
-    borderRadius: 15,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
   appEyebrow: {
     fontSize: 11,
     fontWeight: '700',
     color: Colors.primaryDark,
     letterSpacing: 1,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   appTitle: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: '800',
-    lineHeight: 36,
-    color: '#133838',
+    lineHeight: 33,
+    color: Colors.textPrimary,
     letterSpacing: -0.6,
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#446464',
+    fontSize: 13,
+    color: Colors.textSecondary,
     fontWeight: '500',
-    lineHeight: 21,
+    lineHeight: 18,
   },
 
   benefitRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: 16,
     gap: 8,
   },
   benefitChip: {
@@ -235,11 +237,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E6F1F1',
-    borderRadius: 12,
+    backgroundColor: '#F5F3FF',
+    borderRadius: 13,
     borderWidth: 1,
-    borderColor: '#CFE3E3',
-    paddingVertical: 8,
+    borderColor: '#DDD6FE',
+    paddingVertical: 7,
     gap: 5,
   },
   benefitText: {
@@ -251,49 +253,50 @@ const styles = StyleSheet.create({
   formSection: {
     marginBottom: 16,
     backgroundColor: Colors.white,
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: '#D6E7E7',
+    borderColor: Colors.border,
     padding: 16,
   },
   formTitle: {
     fontSize: 22,
     fontWeight: '700',
     color: Colors.textPrimary,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   formSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.textSecondary,
-    marginBottom: 14,
+    marginBottom: 12,
   },
 
-  checkboxContainer: { flexDirection: 'row', alignItems: 'flex-start', marginVertical: 14 },
+  checkboxContainer: { flexDirection: 'row', alignItems: 'flex-start', marginVertical: 12 },
   checkbox: { width: 20, height: 20, borderRadius: 6, borderWidth: 1.5, borderColor: Colors.mediumGray, justifyContent: 'center', alignItems: 'center', marginRight: 10, marginTop: 2 },
   checkboxChecked: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   termsText: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500', flex: 1, lineHeight: 20 },
   termsLink: { color: Colors.primaryDark, fontWeight: '700' },
 
-  registerButton: { marginBottom: 14, marginTop: 6, borderRadius: 14 },
+  registerButton: { marginBottom: 12, marginTop: 6, borderRadius: 16 },
 
-  signInContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  signInContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 2 },
   signInText: { fontSize: 14, color: Colors.textSecondary, fontWeight: '500' },
   signInLink: { fontSize: 14, color: Colors.primaryDark, fontWeight: '700' },
 
   footNoteWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: Colors.white,
     borderWidth: 1,
-    borderColor: '#D7E7E7',
-    borderRadius: 14,
+    borderColor: Colors.border,
+    borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 8,
+    marginTop: 4,
   },
   footNoteText: {
     fontSize: 12,
-    color: '#506B6B',
+    color: Colors.textSecondary,
     fontWeight: '500',
     lineHeight: 16,
   },

@@ -43,7 +43,7 @@ const AuthButton: React.FC<AuthButtonProps> = ({
       ]}
       onPress={onPress}
       disabled={isDisabled}
-      activeOpacity={0.7}
+      activeOpacity={0.9}
     >
       {loading ? (
         <ActivityIndicator
@@ -70,9 +70,14 @@ const AuthButton: React.FC<AuthButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 12,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
   },
 
   // Size variants
@@ -94,9 +99,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   button_secondary: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
+    backgroundColor: Colors.primaryLight,
+    borderWidth: 1,
+    borderColor: Colors.accentPurple,
   },
   button_ghost: {
     backgroundColor: 'transparent',

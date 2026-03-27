@@ -51,8 +51,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister, onLogin
     setLoading(false);
 
     if (success) {
-      onLoginSuccess && onLoginSuccess();
-      Alert.alert('Success', 'Logged in successfully!');
+      Alert.alert('Success', 'Logged in successfully!', [
+        {
+          text: 'Continue',
+          onPress: () => {
+            onLoginSuccess && onLoginSuccess();
+          },
+        },
+      ]);
     } else {
       const message = error || 'Invalid email or password';
       const lower = message.toLowerCase();
@@ -75,8 +81,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister, onLogin
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.bgOrbTop} />
-      <View style={styles.bgOrbBottom} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
@@ -85,35 +89,43 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister, onLogin
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.headerSection}>
-            <View style={styles.logoWrap}>
-              <View style={styles.logoContainer}>
-                <MaterialIcons name="account-balance-wallet" size={32} color={Colors.white} />
-              </View>
+          <View style={styles.brandBar}>
+            <View style={styles.logoContainer}>
+              <MaterialIcons name="account-balance-wallet" size={26} color={Colors.white} />
             </View>
-            <Text style={styles.appEyebrow}>FINBIT PERSONAL FINANCE</Text>
-            <Text style={styles.appTitle}>Own your money, every day.</Text>
-            <Text style={styles.subtitle}>Sign in to track spending, income, and goals in one secure place.</Text>
+            <View style={styles.brandCopy}>
+              <Text style={styles.appEyebrow}>FINBIT</Text>
+              <Text style={styles.brandCaption}>Personal Finance Companion</Text>
+            </View>
+            <View style={styles.secureBadge}>
+              <MaterialIcons name="verified-user" size={14} color={Colors.primaryDark} />
+              <Text style={styles.secureBadgeText}>Secure</Text>
+            </View>
           </View>
 
-          <View style={styles.metricRow}>
-            <View style={styles.metricCard}>
-              <Text style={styles.metricValue}>24/7</Text>
-              <Text style={styles.metricLabel}>Account Access</Text>
-            </View>
-            <View style={styles.metricCard}>
-              <Text style={styles.metricValue}>256-bit</Text>
-              <Text style={styles.metricLabel}>Data Security</Text>
-            </View>
-            <View style={styles.metricCard}>
-              <Text style={styles.metricValue}>Real-time</Text>
-              <Text style={styles.metricLabel}>Insights</Text>
+          <View style={styles.heroCard}>
+            <Text style={styles.appTitle}>Welcome back</Text>
+            <Text style={styles.subtitle}>Sign in to continue managing your spending and income.</Text>
+
+            <View style={styles.heroStatsRow}>
+              <View style={styles.heroStatChip}>
+                <Text style={styles.heroStatValue}>24/7</Text>
+                <Text style={styles.heroStatLabel}>Access</Text>
+              </View>
+              <View style={styles.heroStatChip}>
+                <Text style={styles.heroStatValue}>Live</Text>
+                <Text style={styles.heroStatLabel}>Insights</Text>
+              </View>
+              <View style={styles.heroStatChip}>
+                <Text style={styles.heroStatValue}>Safe</Text>
+                <Text style={styles.heroStatLabel}>Tokens</Text>
+              </View>
             </View>
           </View>
 
           <View style={styles.formCard}>
-            <Text style={styles.formTitle}>Welcome back</Text>
-            <Text style={styles.formSubtitle}>Continue where you left off</Text>
+            <Text style={styles.formTitle}>Sign In</Text>
+            <Text style={styles.formSubtitle}>Use your email and password</Text>
 
             <AuthInput
               placeholder="Email Address"
@@ -178,7 +190,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister, onLogin
 
           <View style={styles.trustPanel}>
             <MaterialIcons name="verified-user" size={18} color={Colors.success} />
-            <Text style={styles.trustText}>Bank-level encryption with private, local-first session handling.</Text>
+            <Text style={styles.trustText}>Bank-level encryption and secure token authentication enabled.</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -187,103 +199,117 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister, onLogin
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F1F8F8' },
+  safeArea: { flex: 1, backgroundColor: Colors.background },
   keyboardAvoid: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 40, paddingBottom: 34 },
 
-  bgOrbTop: {
-    position: 'absolute',
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: 'rgba(13, 110, 110, 0.08)',
-    top: -90,
-    right: -70,
+  brandBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  bgOrbBottom: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(16, 185, 129, 0.09)',
-    bottom: -80,
-    left: -60,
-  },
-
-  headerSection: { marginBottom: 22 },
-  logoWrap: { marginBottom: 14 },
   logoContainer: {
-    width: 60,
-    height: 60,
+    width: 52,
+    height: 52,
     borderRadius: 16,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 18,
-    elevation: 4,
+  },
+  brandCopy: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  secureBadge: {
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
+    backgroundColor: '#F5F3FF',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  secureBadgeText: {
+    fontSize: 12,
+    color: Colors.primaryDark,
+    fontWeight: '700',
   },
   appEyebrow: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 1.1,
+    letterSpacing: 1,
     color: Colors.primaryDark,
-    marginBottom: 8,
+  },
+  brandCaption: {
+    marginTop: 2,
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+
+  heroCard: {
+    borderRadius: 24,
+    backgroundColor: Colors.primary,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 14,
+    elevation: 5,
   },
   appTitle: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#103434',
-    lineHeight: 38,
+    color: Colors.white,
+    lineHeight: 36,
     letterSpacing: -0.7,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    color: '#365A5A',
+    color: 'rgba(255,255,255,0.88)',
     fontWeight: '500',
-    lineHeight: 21,
+    lineHeight: 20,
   },
-
-  metricRow: {
+  heroStatsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 18,
     gap: 8,
+    marginTop: 14,
   },
-  metricCard: {
+  heroStatChip: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: 'rgba(255,255,255,0.14)',
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#DCEEEE',
     paddingVertical: 10,
     paddingHorizontal: 8,
   },
-  metricValue: {
+  heroStatValue: {
     fontSize: 13,
     fontWeight: '700',
-    color: Colors.primaryDark,
+    color: Colors.white,
     marginBottom: 4,
   },
-  metricLabel: {
+  heroStatLabel: {
     fontSize: 11,
-    fontWeight: '500',
-    color: Colors.textSecondary,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.85)',
   },
 
   formCard: {
     backgroundColor: Colors.white,
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: '#D4E9E9',
-    padding: 16,
+    borderColor: Colors.border,
+    padding: 18,
     marginBottom: 18,
   },
   formTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: 4,
@@ -293,9 +319,9 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginBottom: 14,
   },
-  forgotPasswordContainer: { alignSelf: 'flex-end', marginBottom: 18, marginTop: -4 },
+  forgotPasswordContainer: { alignSelf: 'flex-end', marginBottom: 18, marginTop: -3 },
   forgotPasswordText: { fontSize: 13, color: Colors.primaryDark, fontWeight: '700' },
-  loginButton: { marginBottom: 16, borderRadius: 14 },
+  loginButton: { marginBottom: 16, borderRadius: 16 },
   authErrorText: {
     fontSize: 13,
     color: Colors.error,
@@ -305,7 +331,7 @@ const styles = StyleSheet.create({
   },
 
   dividerContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 10 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#D4E0E0' },
+  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.border },
   dividerText: { marginHorizontal: 12, fontSize: 12, color: Colors.textSecondary, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.6 },
 
   signUpContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
@@ -315,10 +341,10 @@ const styles = StyleSheet.create({
   trustPanel: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    backgroundColor: Colors.white,
     borderWidth: 1,
-    borderColor: '#D7E8E8',
-    borderRadius: 14,
+    borderColor: Colors.border,
+    borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 8,
@@ -326,7 +352,7 @@ const styles = StyleSheet.create({
   trustText: {
     flex: 1,
     fontSize: 12,
-    color: '#4A6363',
+    color: Colors.textSecondary,
     fontWeight: '500',
     lineHeight: 17,
   },

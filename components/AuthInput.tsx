@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Text,
   ViewStyle,
-  TextStyle,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
@@ -37,6 +36,7 @@ const AuthInput: React.FC<AuthInputProps> = ({
   style,
 }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [focused, setFocused] = useState(false);
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
@@ -48,6 +48,7 @@ const AuthInput: React.FC<AuthInputProps> = ({
         style={[
           styles.container,
           !editable && styles.disabledContainer,
+          focused && styles.focusedContainer,
           error && styles.errorContainer,
         ]}
       >
@@ -71,6 +72,8 @@ const AuthInput: React.FC<AuthInputProps> = ({
           keyboardType={keyboardType}
           editable={editable}
           selectionColor={Colors.primary}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
         />
 
         {isPassword && (
@@ -106,12 +109,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 56,
-    borderRadius: 12,
-    backgroundColor: Colors.lightGray,
+    borderRadius: 16,
+    backgroundColor: Colors.white,
     borderWidth: 1,
-    borderColor: Colors.mediumGray,
+    borderColor: Colors.border,
     paddingHorizontal: 16,
     marginBottom: 4,
+  },
+  focusedContainer: {
+    borderColor: Colors.primary,
+    backgroundColor: '#FAF8FF',
   },
   disabledContainer: {
     backgroundColor: Colors.surface,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Colors from '../constants/colors';
+import AppColors from '../constants/colors';
 
 export interface NotificationCardProps {
   message: string;
@@ -10,12 +10,12 @@ export interface NotificationCardProps {
 const NotificationCard: React.FC<NotificationCardProps> = ({ message, type }) => {
   const bgColor =
     type === 'success'
-      ? Colors.success
+      ? AppColors.success
       : type === 'warning'
-      ? Colors.warning
+      ? AppColors.warning
       : type === 'error'
-      ? Colors.error
-      : Colors.info;
+      ? AppColors.error
+      : AppColors.info;
 
   return (
     <View style={[styles.card, { backgroundColor: bgColor }]}>
@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 12,
   },
-  text: { color: Colors.white, fontWeight: '500' },
+  text: { color: AppColors.white, fontWeight: '500' },
 });
 
 export default NotificationCard;

@@ -86,15 +86,25 @@ export const loginUser = async (
       };
     }
 
+    const access = data?.access || data?.token;
+    const refresh = data?.refresh;
+
+    if (!access || !data?.user) {
+      return {
+        success: false,
+        error: 'Login response is missing required data. Please check backend response.',
+      };
+    }
+
     // save tokens in memory (replace with secure storage later)
-    setTokens(data.access, data.refresh);
+    setTokens(access, refresh);
     // TODO: store tokens in AsyncStorage or secure store as needed
 
     return {
       success: true,
       user: data.user,
-      accessToken: data.access,
-      refreshToken: data.refresh,
+      accessToken: access,
+      refreshToken: refresh,
       message: 'Login successful',
     };
   } catch (error) {
@@ -139,15 +149,25 @@ export const registerUser = async (
       };
     }
 
+    const access = responseData?.access || responseData?.token;
+    const refresh = responseData?.refresh;
+
+    if (!access || !responseData?.user) {
+      return {
+        success: false,
+        error: 'Registration succeeded but auth token was not returned by backend.',
+      };
+    }
+
     // save tokens in memory for immediate use
-    setTokens(responseData.access, responseData.refresh);
+    setTokens(access, refresh);
     // TODO: persist securely (AsyncStorage, SecureStore, etc.)
 
     return {
       success: true,
       user: responseData.user,
-      accessToken: responseData.access,
-      refreshToken: responseData.refresh,
+      accessToken: access,
+      refreshToken: refresh,
       message: 'Registration successful',
     };
   } catch (error) {

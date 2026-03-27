@@ -13,7 +13,7 @@ export default function RegisterPage() {
   };
 
   const handleRegisterSuccess = () => {
-    router.replace('/home');
+    router.replace('/(tabs)');
   };
 
   return (

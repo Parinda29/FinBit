@@ -20,7 +20,11 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.finbitmobile"
+      "package": "com.anonymous.finbitmobile",
+      "permissions": [
+        "android.permission.READ_SMS",
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "output": "static",
@@ -28,6 +32,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow FinBit to access your photos for receipt uploads.",
+          "cameraPermission": "Allow FinBit to use your camera for receipt scanning."
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -44,6 +55,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0656b773-782f-49c6-9d72-5b416dca00cc"
+      }
     }
   }
 }
