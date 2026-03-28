@@ -70,22 +70,33 @@ export const isFinanceSms = (body: string): boolean => {
 };
 
 export const extractAmount = (body: string): number | null => {
-  const currencyAmountRegex =
-    /(?:rs\.?|npr|inr)\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i;
+  // Improved regex to handle multiple comma formats:
+  // Standard: 5,250.00 or 5250.00
+  // Indian: 1,23,456.78 (will normalize by removing all commas)
+  const currencyAmountRegex = /(?:rs\.?|npr|inr)\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i;
   const primaryMatch = body.match(currencyAmountRegex);
 
   if (primaryMatch?.[1]) {
-    const cleaned = primaryMatch[1].replace(/,/g, '');
-    const parsed = parseFloat(cleaned);
-    return Number.isFinite(parsed) ? parsed : null;
+    const raw = primaryMatch[1];
+    // Normalize all comma formats by removing all commas
+    const normalized = raw.replace(/,/g, '');
+    // Ensure only valid decimal format remains
+    if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) {
+      return null;
+    }
+    const parsed = parseFloat(normalized);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }
 
   const fallbackAmountRegex = /(credited|debited|spent|received|paid)\s*(?:with|for|of)?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i;
   const fallbackMatch = body.match(fallbackAmountRegex);
   if (fallbackMatch?.[2]) {
-    const cleaned = fallbackMatch[2].replace(/,/g, '');
-    const parsed = parseFloat(cleaned);
-    return Number.isFinite(parsed) ? parsed : null;
+    const normalized = fallbackMatch[2].replace(/,/g, '');
+    if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) {
+      return null;
+    }
+    const parsed = parseFloat(normalized);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }
 
   return null;

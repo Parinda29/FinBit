@@ -266,8 +266,15 @@ export default function Reports() {
               <Text style={styles.metricsStripValue}>{insights.txCount}</Text>
             </View>
             <View style={styles.metricsStripCard}>
-              <Text style={styles.metricsStripLabel}>Avg per Tx</Text>
-              <Text style={styles.metricsStripValue}>{formatNpr(insights.avgPerTx)}</Text>
+              <Text style={styles.metricsStripLabel}>Savings Rate</Text>
+              <Text
+                style={[
+                  styles.metricsStripValue,
+                  { color: insights.savingsRate >= 0 ? '#16A34A' : '#DC2626' },
+                ]}
+              >
+                {`${insights.savingsRate.toFixed(1)}%`}
+              </Text>
             </View>
           </View>
 

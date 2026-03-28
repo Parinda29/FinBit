@@ -48,7 +48,11 @@ const getDefaultApiHost = () => {
     : `http://127.0.0.1:${API_PORT}`;
 };
 
-const API_HOST = (process.env.EXPO_PUBLIC_API_HOST || getDefaultApiHost()).replace(/\/$/, '');
+const configuredApiHost = (process.env.EXPO_PUBLIC_API_HOST || '').trim();
+const shouldAutoDetectApiHost =
+  !configuredApiHost || configuredApiHost.toLowerCase() === 'auto';
+
+const API_HOST = (shouldAutoDetectApiHost ? getDefaultApiHost() : configuredApiHost).replace(/\/$/, '');
 
 export const API_BASE_URL = `${API_HOST}/api/users`;
 

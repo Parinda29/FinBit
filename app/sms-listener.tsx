@@ -143,7 +143,7 @@ export default function SmsListenerScreen() {
 
     const initialDraft = createDraftFromParsedSms(item);
     setSelectedItem(item);
-    setDraft(initialDraft);
+    setDraft({ ...initialDraft, title: '' });
     setDraftDateInput(toEditableDate(initialDraft.date));
   };
 
@@ -600,7 +600,7 @@ export default function SmsListenerScreen() {
                   onChangeText={(text) =>
                     setDraft((prev) => (prev ? { ...prev, title: text } : prev))
                   }
-                  placeholder="Title"
+                  placeholder="Enter your title"
                   placeholderTextColor={Colors.textTertiary}
                 />
 

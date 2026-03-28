@@ -6,21 +6,70 @@
  * Implement actual API calls, token management, and error handling.
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthCredentials, RegisterData, AuthResponse, UserData } from '../types/auth';
 
 import api from './api';
 
-// in-memory token storage (could be AsyncStorage later)
+const ACCESS_TOKEN_KEY = 'auth_access_token';
+const REFRESH_TOKEN_KEY = 'auth_refresh_token';
+
+// In-memory cache backed by AsyncStorage.
 let accessToken: string | null = null;
 let refreshTokenValue: string | null = null;
 
+const persistTokens = async () => {
+  try {
+    if (accessToken) await AsyncStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+    else await AsyncStorage.removeItem(ACCESS_TOKEN_KEY);
+
+    if (refreshTokenValue) await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshTokenValue);
+    else await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
+  } catch (error) {
+    console.warn('Persist token error:', error);
+  }
+};
+
 export const setTokens = (access: string, refresh?: string) => {
   accessToken = access;
-  if (refresh) refreshTokenValue = refresh;
+  if (refresh !== undefined) refreshTokenValue = refresh;
+  void persistTokens();
 };
 
 export const getAccessToken = () => accessToken;
 export const getRefreshToken = () => refreshTokenValue;
+
+export const getAccessTokenAsync = async (): Promise<string | null> => {
+  if (accessToken) return accessToken;
+
+  try {
+    const stored = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+    if (stored) {
+      accessToken = stored;
+      return stored;
+    }
+  } catch (error) {
+    console.warn('Read access token error:', error);
+  }
+
+  return null;
+};
+
+export const getRefreshTokenAsync = async (): Promise<string | null> => {
+  if (refreshTokenValue) return refreshTokenValue;
+
+  try {
+    const stored = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+    if (stored) {
+      refreshTokenValue = stored;
+      return stored;
+    }
+  } catch (error) {
+    console.warn('Read refresh token error:', error);
+  }
+
+  return null;
+};
 
 const API_BASE_URL = api.base; // pointing at /api/users
 
@@ -184,10 +233,9 @@ export const registerUser = async (
  */
 export const logoutUser = async (): Promise<void> => {
   try {
-    // remove tokens from memory
     accessToken = null;
     refreshTokenValue = null;
-    // TODO: clear persisted storage when implemented
+    await AsyncStorage.multiRemove([ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY]);
     console.log('User logged out');
   } catch (error) {
     console.error('Logout error:', error);
@@ -198,7 +246,7 @@ export const logoutUser = async (): Promise<void> => {
  * Retrieve authenticated user's profile data.
  */
 export const fetchUserProfile = async (): Promise<any> => {
-  const token = getAccessToken();
+  const token = await getAccessTokenAsync();
   const resp = await fetch(`${API_BASE_URL}/profile/`, {
     headers: {
       'Content-Type': 'application/json',
@@ -212,7 +260,7 @@ export const fetchUserProfile = async (): Promise<any> => {
  * Update authenticated user's profile.
  */
 export const updateUserProfile = async (data: Partial<UserData>): Promise<any> => {
-  const token = getAccessToken();
+  const token = await getAccessTokenAsync();
   const resp = await fetch(`${API_BASE_URL}/profile/`, {
     method: 'PUT',
     headers: {
@@ -230,10 +278,8 @@ export const updateUserProfile = async (data: Partial<UserData>): Promise<any> =
  */
 export const isAuthenticated = async (): Promise<boolean> => {
   try {
-    // TODO: Check if token exists and is valid
-    // const token = await AsyncStorage.getItem('authToken');
-    // return !!token;
-    return false;
+    const token = await getAccessTokenAsync();
+    return !!token;
   } catch (error) {
     console.error('Auth check error:', error);
     return false;

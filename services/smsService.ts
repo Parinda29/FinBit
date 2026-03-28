@@ -1,11 +1,12 @@
 import { PermissionsAndroid, Platform, Linking, Alert } from 'react-native';
 import SmsAndroid from 'react-native-get-sms-android';
 import api from './api';
-import { getAccessToken } from './authService';
+import { getAccessTokenAsync } from './authService';
 import { ParsedFinanceSms, RawSmsMessage, parseFinanceSms } from './smsParser';
 
 export type SmsPermissionState = 'granted' | 'denied' | 'unsupported';
 export type StatementProvider = 'esewa' | 'khalti' | 'bank' | 'other';
+export type { ParsedFinanceSms };
 
 export interface SmsImportDraft {
   amount: number;
@@ -100,6 +101,7 @@ const normalizeSmsList = (rawList: string): RawSmsMessage[] => {
 const toSafeIso = (value: Date): string => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
+    console.warn('[SMS] Invalid date provided, falling back to current date');
     return new Date().toISOString();
   }
   return parsed.toISOString();
@@ -185,20 +187,72 @@ export const scanFinanceSms = async (maxCount = 150): Promise<ParsedFinanceSms[]
 export const createDraftFromParsedSms = (
   parsedSms: ParsedFinanceSms,
   fallbackCategory = 'SMS Import'
-): SmsImportDraft => ({
-  amount: parsedSms.amount,
-  date: parsedSms.date,
-  title: parsedSms.title,
-  category: fallbackCategory,
-  type: parsedSms.type,
-  description: parsedSms.body,
-});
+): SmsImportDraft => {
+  const inferCategory = (smsBody: string): string => {
+    const lower = smsBody.toLowerCase();
+
+    // Food & Dining
+    if (
+      lower.match(
+        /food|restaurant|cafe|dine|pizza|burger|coffee|bakery|grocery|supermarket|market|kitchen|bar|lounge|bake/i
+      )
+    ) {
+      return 'Food';
+    }
+
+    // Transportation & Travel
+    if (lower.match(/uber|taxi|cab|travel|hotel|airbnb|booking|flight|ola|transport|commute|auto|bus/i)) {
+      return 'Travel';
+    }
+
+    // Entertainment
+    if (lower.match(/movie|cinema|music|game|spotify|netflix|theatre|show|ticket|concert|event/i)) {
+      return 'Entertainment';
+    }
+
+    // Utilities & Bills
+    if (lower.match(/electric|water|internet|bill|utility|recharge|phone|data|mobile|wifi|gas|fuel|toll/i)) {
+      return 'Bills';
+    }
+
+    // Shopping & Retail
+    if (lower.match(/amazon|flipkart|daraz|shop|store|mall|purchase|product|item|clothing|apparel|shoe/i)) {
+      return 'Shopping';
+    }
+
+    // Health & Medical
+    if (lower.match(/hospital|doctor|medical|pharmacy|health|medicine|clinic|dental|vaccine|lab|test/i)) {
+      return 'Health';
+    }
+
+    // Banking & Financial
+    if (lower.match(/bank|transfer|deposit|withdrawal|loan|credit|debit|fee|charge|interest|dividend|investment/i)) {
+      return 'Banking';
+    }
+
+    // Digital Wallets & Payment Services
+    if (lower.match(/esewa|khalti|paypal|gpay|phonepay|paytm|wallet|digital|online payment/i)) {
+      return 'Wallet';
+    }
+
+    return fallbackCategory;
+  };
+
+  return {
+    amount: parsedSms.amount,
+    date: parsedSms.date,
+    title: parsedSms.title,
+    category: inferCategory(parsedSms.body),
+    type: parsedSms.type,
+    description: parsedSms.body,
+  };
+};
 
 export const importSmsAsTransaction = async (
   parsedSms: ParsedFinanceSms,
   draft: SmsImportDraft
 ): Promise<{ transactionId: number }> => {
-  const token = getAccessToken();
+  const token = await getAccessTokenAsync();
   if (!token) {
     throw new Error('You are not logged in. Please login again and retry import.');
   }
@@ -246,7 +300,7 @@ export const importStatementPdfFile = async (
   mimeType: string,
   provider: StatementProvider
 ): Promise<StatementPdfImportResult> => {
-  const token = getAccessToken();
+  const token = await getAccessTokenAsync();
   if (!token) {
     throw new Error('You are not logged in. Please login again and retry import.');
   }
@@ -286,25 +340,50 @@ export const importStatementPdfFile = async (
 const saveSmsMetadata = async (
   transactionId: number,
   parsedSms: ParsedFinanceSms,
-  token: string
+  token: string,
+  maxRetries = 3
 ): Promise<void> => {
   const safeSender = String(parsedSms.sender || 'Unknown').trim().slice(0, 120);
 
-  const response = await fetch(`${TRANSACTION_BASE_URL}/${transactionId}/sms/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Token ${token}`,
-    },
-    body: JSON.stringify({
-      message: parsedSms.body,
-      sender: safeSender,
-      sms_timestamp: toSafeIso(parsedSms.date),
-    }),
-  });
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(`${TRANSACTION_BASE_URL}/${transactionId}/sms/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Token ${token}`,
+        },
+        body: JSON.stringify({
+          message: parsedSms.body,
+          sender: safeSender,
+          sms_timestamp: toSafeIso(parsedSms.date),
+        }),
+      });
 
-  const json = await parseResponseBody(response);
-  if (!response.ok || json?.success === false) {
-    throw new Error(parseApiError(json, 'Transaction was created but SMS metadata save failed.'));
+      const json = await parseResponseBody(response);
+      if (!response.ok || json?.success === false) {
+        // Handle duplicate SMS detection
+        if (response.status === 409 && json?.error === 'duplicate_sms') {
+          console.warn(`[SMS] Duplicate SMS detected for transaction ${transactionId}`);
+          throw new Error('This SMS has already been imported. Removing duplicate transaction.');
+        }
+        throw new Error(parseApiError(json, 'Transaction was created but SMS metadata save failed.'));
+      }
+
+      console.log(`[SMS] Metadata saved successfully for transaction ${transactionId}`);
+      return; // Success - exit
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (attempt < maxRetries - 1) {
+        const backoffMs = Math.min(1000 * Math.pow(2, attempt), 5000); // Exponential backoff: 1s, 2s, 4s max
+        console.warn(`[SMS] Metadata save failed (attempt ${attempt + 1}/${maxRetries}), retrying in ${backoffMs}ms:`, lastError);
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
+      } else {
+        console.error(`[SMS] Metadata save failed after ${maxRetries} attempts:`, lastError);
+      }
+    }
   }
+
+  throw lastError || new Error('SMS metadata save failed after multiple retries');
 };
