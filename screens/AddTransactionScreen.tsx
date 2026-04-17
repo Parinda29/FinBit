@@ -32,7 +32,7 @@ const AddTransactionScreen: React.FC = () => {
         Alert.alert('Success', 'Transaction saved');
         router.back();
       } else {
-        Alert.alert('Error', resp?.error || 'Failed to save');
+        Alert.alert('Error', 'Failed to save');
       }
     } catch (e) {
       console.error('Save transaction error', e);

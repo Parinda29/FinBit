@@ -76,12 +76,19 @@ export interface BudgetStatus {
 }
 
 export interface AppNotification {
-  type: string;
+  id: number;
+  type: 'budget' | 'income' | 'expense' | string;
   title: string;
   message: string;
   month: string;
   created_at: string;
+  is_read: boolean;
+  read_at?: string | null;
+  amount?: string;
+  category?: string;
 }
+
+const isTransientNotificationId = (id: number): boolean => id >= 1000000;
 
 export interface OcrScanResult {
   title: string;
@@ -342,6 +349,46 @@ export const getNotifications = async (month?: string): Promise<{
       ? (payload.notifications as AppNotification[])
       : [],
   };
+};
+
+export const markNotificationRead = async (notificationId: number): Promise<AppNotification> => {
+  const resp = await fetch(`${NOTIFICATIONS_URL}/${notificationId}/read/`, {
+    method: 'PATCH',
+    headers: {
+      ...authHeaders(),
+    },
+  });
+
+  const payload = await resp.json();
+  if (!resp.ok || !payload?.success || !payload?.notification) {
+    throw new Error(payload?.message || 'Failed to mark notification as read.');
+  }
+
+  return payload.notification as AppNotification;
+};
+
+export const removeNotification = async (notificationId: number): Promise<void> => {
+  if (isTransientNotificationId(notificationId)) {
+    return;
+  }
+
+  const resp = await fetch(`${NOTIFICATIONS_URL}/${notificationId}/`, {
+    method: 'DELETE',
+    headers: {
+      ...authHeaders(),
+    },
+  });
+
+  let payload: any = null;
+  try {
+    payload = await resp.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!resp.ok || payload?.success === false) {
+    throw new Error(payload?.message || 'Failed to delete notification.');
+  }
 };
 
 export const scanReceiptOcr = async (file: {

@@ -46,7 +46,7 @@ export default function Reports() {
       const rows = await fetchTransactions({ pageSize: 700 });
       setTransactions(rows);
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load reports data.');
+      setError(getFriendlyErrorMessage(fetchError, 'Failed to load reports data.'));
     } finally {
       setLoading(false);
       setRefreshing(false);

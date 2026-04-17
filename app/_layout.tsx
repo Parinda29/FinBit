@@ -3,12 +3,14 @@ import 'react-native-reanimated';
 import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppThemeProvider } from '../context/AppThemeContext';
 import { ToastProvider } from '../context/ToastContext';
 import SplashScreen from '../components/SplashScreen';
 import Colors from '../constants/colors';
+import { bootstrapAuthSession } from '../services/authService';
 
-function RootNavigator() {
+function RootNavigator({ initialRouteName }: { initialRouteName: 'login' | '(tabs)' }) {
   return (
     <>
       <Stack
@@ -20,7 +22,7 @@ function RootNavigator() {
             paddingTop: 8,
           },
         }}
-        initialRouteName="login"
+        initialRouteName={initialRouteName}
       >
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
@@ -42,25 +44,47 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
+  const [initialRouteName, setInitialRouteName] = useState<'login' | '(tabs)'>('login');
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    // Show splash screen for 1.5 seconds on app start
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 1500);
+    let mounted = true;
 
-    return () => clearTimeout(timer);
+    const loadAuthState = async () => {
+      try {
+        const hasSession = await bootstrapAuthSession();
+        if (!mounted) return;
+
+        setInitialRouteName(hasSession ? '(tabs)' : 'login');
+      } finally {
+        if (mounted) setAuthReady(true);
+      }
+    };
+
+    loadAuthState();
+
+    // Keep the splash visible briefly while storage and the UI settle.
+    const timer = setTimeout(() => {
+      if (mounted) setShowSplash(false);
+    }, 900);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
   }, []);
 
-  if (showSplash) {
+  if (showSplash || !authReady) {
     return <SplashScreen onAnimationComplete={() => setShowSplash(false)} />;
   }
 
   return (
-    <AppThemeProvider>
-      <ToastProvider>
-        <RootNavigator />
-      </ToastProvider>
-    </AppThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppThemeProvider>
+        <ToastProvider>
+          <RootNavigator initialRouteName={initialRouteName} />
+        </ToastProvider>
+      </AppThemeProvider>
+    </GestureHandlerRootView>
   );
 }

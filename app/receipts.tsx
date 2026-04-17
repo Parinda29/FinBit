@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 
 import {
   deleteReceiptCapture,
@@ -91,7 +92,7 @@ export default function Receipts() {
       const rows = await listReceiptCaptures();
       setSavedCaptures(rows);
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load saved receipts.');
+      setError(getFriendlyErrorMessage(fetchError, 'Failed to load saved receipts.'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -119,7 +120,7 @@ export default function Receipts() {
         void loadCaptures(true);
       }, 500);
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : 'Delete failed.');
+      setError(getFriendlyErrorMessage(deleteError, 'Delete failed.'));
     } finally {
       setBusy(false);
     }

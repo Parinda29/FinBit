@@ -14,7 +14,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import AuthInput from '../components/AuthInput';
 import AuthButton from '../components/AuthButton';
 import Colors from '../constants/colors';
-
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 import { loginUser } from '../services/authService';
 
 interface LoginScreenProps {
@@ -60,7 +60,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister, onLogin
         },
       ]);
     } else {
-      const message = error || 'Invalid email or password';
+      const message = getFriendlyErrorMessage(
+        error || 'Invalid email or password',
+        'Unable to sign in right now. Please try again.'
+      );
       const lower = message.toLowerCase();
 
       if (

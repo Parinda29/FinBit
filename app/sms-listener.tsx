@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   Platform,
   SafeAreaView,
@@ -15,6 +16,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 import {
   importStatementPdfFile,
   ParsedFinanceSms,
@@ -172,7 +174,7 @@ export default function SmsListenerScreen() {
       const parsedMessages = await scanFinanceSms(220);
       setItems(parsedMessages);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to scan SMS inbox.');
+      setErrorMessage(getFriendlyErrorMessage(error, 'Failed to scan SMS inbox.'));
     } finally {
       setLoading(false);
     }
@@ -237,12 +239,15 @@ export default function SmsListenerScreen() {
       const providerLabel = STATEMENT_PROVIDER_OPTIONS.find(
         (item) => item.value === result.provider
       )?.label;
-      setSuccessMessage(
+      setSuccessMessage('Added successfully.');
+      Alert.alert(
+        'Added successfully',
         `${result.createdCount} transaction(s) imported from ${providerLabel ?? 'statement'} PDF.`
       );
       setStatementFile(null);
+      setImportMode('sms');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Statement PDF import failed.');
+      setErrorMessage(getFriendlyErrorMessage(error, 'Statement PDF import failed.'));
     } finally {
       setImporting(false);
     }
@@ -284,9 +289,10 @@ export default function SmsListenerScreen() {
         return [...previous, key];
       });
       closeConfirmModal();
-      setSuccessMessage('SMS imported successfully as a transaction.');
+      setSuccessMessage('Added successfully.');
+      Alert.alert('Added successfully', 'SMS was imported as a transaction.');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'SMS import failed.');
+      setErrorMessage(getFriendlyErrorMessage(error, 'SMS import failed.'));
     } finally {
       setImporting(false);
     }
@@ -473,7 +479,7 @@ export default function SmsListenerScreen() {
                 activeOpacity={0.85}
               >
                 <Text style={styles.importButtonText}>
-                  {isImported(item) ? 'Imported' : 'Import'}
+                  {isImported(item) ? 'Already Imported' : 'Import'}
                 </Text>
               </TouchableOpacity>
             </View>

@@ -287,11 +287,39 @@ export const importSmsAsTransaction = async (
   try {
     await saveSmsMetadata(json.transaction.id, parsedSms, token);
   } catch (metadataError) {
-    // Do not fail the import if transaction itself is created successfully.
+    const message =
+      metadataError instanceof Error ? metadataError.message : String(metadataError || '');
+
+    // Duplicate detection happens in SMS metadata endpoint.
+    // If duplicate is detected, rollback newly created transaction and surface clear error.
+    if (/already been imported|duplicate_sms/i.test(message)) {
+      try {
+        await deleteTransactionById(json.transaction.id, token);
+      } catch (rollbackError) {
+        console.warn('[SMS] Duplicate rollback failed:', rollbackError);
+      }
+
+      throw new Error('This SMS has already been imported.');
+    }
+
+    // Keep import success if metadata persistence fails for non-duplicate reasons.
     console.warn('[SMS] Transaction created but metadata save failed:', metadataError);
   }
 
   return { transactionId: json.transaction.id };
+};
+
+const deleteTransactionById = async (transactionId: number, token: string): Promise<void> => {
+  const response = await fetch(`${TRANSACTION_BASE_URL}/${transactionId}/`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Token ${token}`,
+    },
+  });
+
+  if (!response.ok && response.status !== 204) {
+    throw new Error(`Failed to rollback transaction ${transactionId}`);
+  }
 };
 
 export const importStatementPdfFile = async (

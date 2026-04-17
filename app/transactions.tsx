@@ -14,6 +14,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
 import TransactionListItem from '../components/dashboard/TransactionListItem';
 import { fetchTransactions, TransactionItem } from '../services/transactionService';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 
 const formatNpr = (value: number) =>
   `NPR ${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -50,7 +51,7 @@ export default function Transactions() {
       const data = await fetchTransactions({ pageSize: 300 });
       setTransactions(data);
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to fetch transactions.');
+      setError(getFriendlyErrorMessage(fetchError, 'Failed to fetch transactions.'));
     } finally {
       setLoading(false);
       setRefreshing(false);

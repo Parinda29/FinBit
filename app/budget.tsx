@@ -12,6 +12,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 
 import {
   BudgetItem,
@@ -68,7 +69,7 @@ export default function BudgetPage() {
       setBudgets(rows);
       setSummary(summaryData);
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load budgets.');
+      setError(getFriendlyErrorMessage(fetchError, 'Failed to load budgets.'));
     } finally {
       setLoading(false);
     }
@@ -112,7 +113,7 @@ export default function BudgetPage() {
       setSelectedMonth(newMonth);
       await loadBudgetData();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Failed to save budget.');
+      setError(getFriendlyErrorMessage(saveError, 'Failed to save budget.'));
     } finally {
       setSaving(false);
     }
@@ -125,7 +126,7 @@ export default function BudgetPage() {
       await deleteBudget(id);
       await loadBudgetData();
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : 'Failed to delete budget.');
+      setError(getFriendlyErrorMessage(deleteError, 'Failed to delete budget.'));
     } finally {
       setSaving(false);
     }

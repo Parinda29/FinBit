@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
 import { createTransaction } from '../services/transactionService';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 
 const todayYmd = () => new Date().toISOString().slice(0, 10);
 
@@ -91,7 +92,7 @@ export default function AddExpense() {
         router.push('/(tabs)/transactions');
       }, 420);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Failed to save expense.');
+      setError(getFriendlyErrorMessage(saveError, 'Failed to save expense.'));
     } finally {
       setLoading(false);
     }

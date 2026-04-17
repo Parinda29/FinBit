@@ -16,6 +16,7 @@ import { PieChart } from 'react-native-chart-kit';
 import Colors from '../../constants/colors';
 import QuickActionCard from './QuickActionCard';
 import TransactionListItem from './TransactionListItem';
+import { getFriendlyErrorMessage } from '../../utils/errorMessages';
 import {
   getHomeDashboardData,
   getBudgetSummary,
@@ -134,7 +135,7 @@ export default function HomeDashboard() {
         setUserName(profileName.trim());
       }
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load dashboard data.');
+      setError(getFriendlyErrorMessage(fetchError, 'Failed to load dashboard data.'));
     } finally {
       setLoading(false);
     }
@@ -236,9 +237,13 @@ export default function HomeDashboard() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.greeting}>{`${greetingPrefix}, ${userName}`}</Text>
-            <Text style={styles.subtitle}>Here&apos;s your financial overview</Text>
+          <View style={styles.headerCopy}>
+            <Text style={styles.greeting} numberOfLines={1} ellipsizeMode="tail">
+              {`${greetingPrefix}, ${userName}`}
+            </Text>
+            <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+              Here&apos;s your financial overview
+            </Text>
           </View>
 
           <View style={styles.headerActions}>
@@ -456,6 +461,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 12,
+  },
   greeting: {
     fontSize: 40 / 2,
     fontWeight: '800',
@@ -471,7 +481,8 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 6,
+    flexShrink: 0,
   },
   iconButton: {
     width: 42,

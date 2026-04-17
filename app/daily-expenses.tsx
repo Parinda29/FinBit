@@ -12,6 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
 import { fetchTransactions, TransactionItem } from '../services/transactionService';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 
 const formatNpr = (value: number) =>
   `NPR ${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -46,7 +47,7 @@ export default function DailyExpenses() {
       const data = await fetchTransactions({ type: 'expense', pageSize: 300 });
       setTransactions(data);
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to fetch daily expenses.');
+      setError(getFriendlyErrorMessage(fetchError, 'Failed to fetch daily expenses.'));
     } finally {
       setLoading(false);
       setRefreshing(false);

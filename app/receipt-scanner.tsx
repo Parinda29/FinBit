@@ -21,6 +21,7 @@ import {
   createReceiptCapture,
   ReceiptCategory,
 } from '../services/receiptService';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 
 type SelectedReceiptFile = {
   uri: string;
@@ -110,7 +111,7 @@ export default function ReceiptScannerPage() {
     } catch (error) {
       setOcrStatus('failed');
       setFlowMessage('OCR failed. You can still enter amount/category manually and save.');
-      setNotice(error instanceof Error ? error.message : 'Could not parse scanned receipt.');
+      setNotice(getFriendlyErrorMessage(error, 'Could not parse scanned receipt.'));
     }
   }, [title]);
 
@@ -144,7 +145,7 @@ export default function ReceiptScannerPage() {
       setFlowMessage('Camera capture complete. Scanning OCR...');
       await runOcrForFile(file);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not capture receipt image.';
+      const message = getFriendlyErrorMessage(error, 'Could not capture receipt image.');
       if (/NoSuchMethodError|getServices\(\)/i.test(message)) {
         setNotice('Camera module mismatch detected. Rebuild app once: npx expo run:android --device');
       } else {
@@ -179,7 +180,7 @@ export default function ReceiptScannerPage() {
       setFlowMessage('Receipt uploaded. Running OCR scan...');
       await runOcrForFile(file);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'Could not upload receipt file.');
+      setNotice(getFriendlyErrorMessage(error, 'Could not upload receipt file.'));
     } finally {
       setLoading(false);
     }
@@ -234,7 +235,7 @@ export default function ReceiptScannerPage() {
           description || undefined
         );
       } catch (captureError) {
-        const reason = captureError instanceof Error ? captureError.message : 'Receipt image upload failed.';
+        const reason = getFriendlyErrorMessage(captureError, 'Receipt image upload failed.');
         Alert.alert('Partially Saved', `Transaction saved, but receipt image failed: ${reason}`);
         return;
       }
@@ -255,7 +256,7 @@ export default function ReceiptScannerPage() {
       setNotice(null);
       setFlowMessage('Capture or upload next receipt image, then save.');
     } catch (error) {
-      Alert.alert('Save Failed', error instanceof Error ? error.message : 'Failed to save receipt image.');
+      Alert.alert('Save Failed', getFriendlyErrorMessage(error, 'Failed to save receipt image.'));
     } finally {
       setSaving(false);
     }

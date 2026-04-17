@@ -15,6 +15,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
 import { fetchUserProfile, logoutUser, updateUserProfile } from '../services/authService';
 import { getHomeDashboardData, getNotifications } from '../services/transactionService';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 
 type ActionRow = {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -153,7 +154,7 @@ export default function Profile() {
       setEditOpen(false);
       await loadProfile();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Failed to update profile.');
+      setError(getFriendlyErrorMessage(saveError, 'Failed to update profile.'));
     } finally {
       setSaving(false);
     }

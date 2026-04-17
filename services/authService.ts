@@ -71,6 +71,14 @@ export const getRefreshTokenAsync = async (): Promise<string | null> => {
   return null;
 };
 
+export const bootstrapAuthSession = async (): Promise<boolean> => {
+  const token = await getAccessTokenAsync();
+  if (!token) return false;
+
+  await getRefreshTokenAsync().catch(() => null);
+  return true;
+};
+
 const API_BASE_URL = api.base; // pointing at /api/users
 
 const parseApiError = (payload: any, fallback: string): string => {
