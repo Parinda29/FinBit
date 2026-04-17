@@ -3,6 +3,7 @@ import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Colors from '../constants/colors';
+import FinbitLogo from '../components/ui/FinbitLogo';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -12,8 +13,21 @@ export default function SettingsPage() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Settings</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Settings</Text>
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Close settings"
+        >
+          <MaterialIcons name="close" size={20} color="#DC2626" />
+        </TouchableOpacity>
+      </View>
       <Text style={styles.subtitle}>Lightweight controls for app behavior and tools.</Text>
+      <View style={styles.logoWrap}>
+        <FinbitLogo size="sm" showTagline={false} />
+      </View>
 
       <View style={styles.currencyBanner}>
         <MaterialIcons name="currency-rupee" size={18} color={Colors.primaryDark} />
@@ -108,7 +122,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
     paddingHorizontal: 18,
-    paddingTop: 16,
+    paddingTop: 18,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    backgroundColor: '#FEF2F2',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 22,
@@ -119,6 +148,9 @@ const styles = StyleSheet.create({
   subtitle: {
     color: Colors.textSecondary,
     fontSize: 12,
+    marginBottom: 10,
+  },
+  logoWrap: {
     marginBottom: 10,
   },
   currencyBanner: {

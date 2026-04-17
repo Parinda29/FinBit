@@ -13,6 +13,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import AuthInput from '../components/AuthInput';
 import AuthButton from '../components/AuthButton';
+import FinbitLogo from '../components/ui/FinbitLogo';
 import Colors from '../constants/colors';
 import { getFriendlyErrorMessage } from '../utils/errorMessages';
 import { loginUser } from '../services/authService';
@@ -93,13 +94,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToRegister, onLogin
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.brandBar}>
-            <View style={styles.logoContainer}>
-              <MaterialIcons name="account-balance-wallet" size={26} color={Colors.white} />
-            </View>
-            <View style={styles.brandCopy}>
-              <Text style={styles.appEyebrow}>FINBIT</Text>
-              <Text style={styles.brandCaption}>Personal Finance Companion</Text>
-            </View>
+            <FinbitLogo size="md" />
             <View style={styles.secureBadge}>
               <MaterialIcons name="verified-user" size={14} color={Colors.primaryDark} />
               <Text style={styles.secureBadgeText}>Secure</Text>
@@ -212,18 +207,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  logoContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  brandCopy: {
-    flex: 1,
-    marginLeft: 10,
-  },
   secureBadge: {
     borderWidth: 1,
     borderColor: '#DDD6FE',
@@ -240,19 +223,6 @@ const styles = StyleSheet.create({
     color: Colors.primaryDark,
     fontWeight: '700',
   },
-  appEyebrow: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1,
-    color: Colors.primaryDark,
-  },
-  brandCaption: {
-    marginTop: 2,
-    fontSize: 12,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-
   heroCard: {
     borderRadius: 24,
     backgroundColor: Colors.primary,

@@ -19,7 +19,7 @@ function RootNavigator({ initialRouteName }: { initialRouteName: 'login' | '(tab
           animation: 'slide_from_right',
           contentStyle: {
             backgroundColor: Colors.background,
-            paddingTop: 8,
+            paddingTop: 14,
           },
         }}
         initialRouteName={initialRouteName}
@@ -35,6 +35,8 @@ function RootNavigator({ initialRouteName }: { initialRouteName: 'login' | '(tab
         <Stack.Screen name="budget" />
         <Stack.Screen name="quick-add" />
         <Stack.Screen name="daily-expenses" />
+        <Stack.Screen name="help-support" />
+        <Stack.Screen name="about-finbit" />
       </Stack>
 
       <StatusBar style="dark" />

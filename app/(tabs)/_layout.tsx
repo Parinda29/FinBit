@@ -12,7 +12,7 @@ export default function TabsLayout() {
         screenOptions={{
           headerShown: false,
           sceneStyle: {
-            paddingTop: 8,
+            paddingTop: 14,
             backgroundColor: Colors.background,
           },
           tabBarShowLabel: true,

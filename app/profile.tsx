@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -13,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Colors from '../constants/colors';
+import FinbitLogo from '../components/ui/FinbitLogo';
 import { fetchUserProfile, logoutUser, updateUserProfile } from '../services/authService';
 import { getHomeDashboardData, getNotifications } from '../services/transactionService';
 import { getFriendlyErrorMessage } from '../utils/errorMessages';
@@ -161,8 +163,21 @@ export default function Profile() {
   };
 
   const handleLogout = async () => {
-    await logoutUser();
-    router.replace('/login');
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await logoutUser();
+            router.replace('/login');
+          },
+        },
+      ]
+    );
   };
 
   const accountRows: ActionRow[] = [
@@ -211,7 +226,7 @@ export default function Profile() {
       iconBg: '#EDE9FE',
       title: 'Help & Support',
       subtitle: 'Get help for common issues',
-      route: '/settings',
+      onPress: () => router.push('/help-support'),
     },
     {
       icon: 'info-outline',
@@ -219,7 +234,7 @@ export default function Profile() {
       iconBg: '#F5F3FF',
       title: 'About FinBit',
       subtitle: 'Version and app information',
-      route: '/settings',
+      onPress: () => router.push('/about-finbit'),
     },
   ];
 
@@ -242,6 +257,10 @@ export default function Profile() {
 
         <Text style={styles.heroName}>{name}</Text>
         <Text style={styles.heroEmail}>{email}</Text>
+      </View>
+
+      <View style={styles.logoStrip}>
+        <FinbitLogo size="sm" showTagline={false} />
       </View>
 
       <View style={styles.statsRow}>
@@ -419,11 +438,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   statsRow: {
-    marginTop: -34,
+    marginTop: -8,
     paddingHorizontal: 16,
     flexDirection: 'row',
     gap: 8,
     marginBottom: 12,
+  },
+  logoStrip: {
+    marginTop: -26,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FAF5FF',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    alignSelf: 'flex-start',
   },
   statCard: {
     flex: 1,
