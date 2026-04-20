@@ -28,8 +28,8 @@ const normalizeDateInput = (value: string) => {
 };
 
 const EXPENSE_CATEGORIES = ['Food', 'Transport', 'Bills', 'Shopping', 'Health', 'Entertainment', 'Utilities', 'Other'] as const;
-const PAYMENT_METHODS = ['Cash', 'Card', 'Bank', 'UPI'] as const;
-const EXPENSE_TAGS = ['Essential', 'Discretionary', 'Planned', 'Unexpected'] as const;
+const PAYMENT_METHODS = ['Cash', 'Card', 'Bank'] as const;
+const EXPENSE_TAGS = ['Essential', 'Planned', 'Unexpected'] as const;
 
 export default function AddExpense() {
   const router = useRouter();

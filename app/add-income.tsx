@@ -28,8 +28,8 @@ const normalizeDateInput = (value: string) => {
 };
 
 const INCOME_CATEGORIES = ['Salary', 'Freelance', 'Business', 'Bonus', 'Refund', 'Investment', 'Gifts', 'Other'] as const;
-const PAYMENT_METHODS = ['Bank', 'Cash', 'Card', 'UPI'] as const;
-const INCOME_TAGS = ['Regular', 'One-time', 'Passive', 'Side Project'] as const;
+const PAYMENT_METHODS = ['Bank', 'Cash', 'Card'] as const;
+const INCOME_TAGS = ['Regular', 'One-time', 'Side Project'] as const;
 
 export default function AddIncome() {
   const router = useRouter();
