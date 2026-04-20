@@ -6,7 +6,7 @@ import CustomButton from '../components/CustomButton';
 const SettingsScreen: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState('NPR');
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
   const toggleDarkMode = () => setIsDarkMode(prev => !prev);
@@ -14,7 +14,7 @@ const SettingsScreen: React.FC = () => {
   const toggleBiometric = () => setBiometricEnabled(prev => !prev);
 
   const handleChangeCurrency = () => {
-    Alert.alert('Select Currency', 'Here you can open a modal to choose currency (e.g., USD, EUR, GBP)');
+    Alert.alert('Currency', 'Currency is fixed to NPR throughout the app.');
   };
 
   const handleResetSettings = () => {
@@ -23,7 +23,7 @@ const SettingsScreen: React.FC = () => {
       { text: 'Reset', onPress: () => {
           setIsDarkMode(false);
           setNotificationsEnabled(true);
-          setCurrency('USD');
+          setCurrency('NPR');
           setBiometricEnabled(false);
           Alert.alert('Settings reset!');
         }, style: 'destructive' }

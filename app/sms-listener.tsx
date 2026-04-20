@@ -38,8 +38,7 @@ const STATEMENT_PROVIDER_OPTIONS: { value: StatementProvider; label: string }[] 
 ];
 
 const formatAmount = (amount: number, currencyCode: string): string => {
-  const symbol = currencyCode === 'NPR' ? 'NPR ' : currencyCode === 'INR' ? 'INR ' : 'Rs ';
-  return `${symbol}${amount.toLocaleString('en-IN', {
+  return `NPR ${amount.toLocaleString('en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;

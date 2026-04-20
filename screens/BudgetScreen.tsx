@@ -17,7 +17,7 @@ const BudgetScreen: React.FC = () => {
       <Text style={styles.label}>Set Budget Amount</Text>
       <TextInput
         style={styles.input}
-        placeholder="$0.00"
+        placeholder="NPR 0.00"
         value={budget}
         onChangeText={setBudget}
         keyboardType="numeric"

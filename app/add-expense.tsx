@@ -128,7 +128,7 @@ export default function AddExpense() {
           <Text style={styles.amountHint}>{todayYmd()}</Text>
         </View>
         <View style={styles.amountInputRow}>
-          <Text style={styles.currencySymbol}>₨</Text>
+          <Text style={styles.currencySymbol}>NPR</Text>
           <TextInput
             placeholder="0.00"
             keyboardType="decimal-pad"
