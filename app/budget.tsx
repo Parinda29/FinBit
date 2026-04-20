@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -53,6 +54,7 @@ export default function BudgetPage() {
   const [budgets, setBudgets] = useState<BudgetItem[]>([]);
   const [summary, setSummary] = useState<BudgetStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -92,6 +94,12 @@ export default function BudgetPage() {
     const timer = setTimeout(() => setSuccess(null), 2200);
     return () => clearTimeout(timer);
   }, [success]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadBudgetData();
+    setRefreshing(false);
+  }, [loadBudgetData]);
 
   const categoryRows = useMemo(() => {
     const summaryRows = summary?.categories || [];
@@ -229,7 +237,18 @@ export default function BudgetPage() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
+          />
+        }
+      >
         <View style={styles.headerCard}>
           <View style={styles.headerAccentBar} />
 
