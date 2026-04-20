@@ -1,0 +1,8 @@
+{
+  "name": "finbit-backend",
+  "private": true,
+  "scripts": {
+    "ngrok": "powershell -ExecutionPolicy Bypass -Command \"& '.\\start_ngrok_demo.ps1' -NgrokAuthToken $env:NGROK_AUTHTOKEN\"",
+    "ngrok:skip-expo": "powershell -ExecutionPolicy Bypass -Command \"& '.\\start_ngrok_demo.ps1' -NgrokAuthToken $env:NGROK_AUTHTOKEN -SkipExpoRestart\""
+  }
+}

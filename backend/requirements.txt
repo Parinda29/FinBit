@@ -1,0 +1,10 @@
+Django==4.2.0
+djangorestframework==3.14.0
+django-cors-headers==4.0.0
+mysqlclient==2.2.0; platform_system != "Windows"
+PyMySQL==1.1.1
+python-decouple==3.8
+Pillow>=10.4.0,<12
+pypdf==5.4.0
+pytesseract==0.3.13
+opencv-python-headless==4.11.0.86
