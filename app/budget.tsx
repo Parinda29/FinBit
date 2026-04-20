@@ -93,10 +93,41 @@ export default function BudgetPage() {
     return () => clearTimeout(timer);
   }, [success]);
 
+  const categoryRows = useMemo(() => {
+    const summaryRows = summary?.categories || [];
+    const merged = new Map<number, BudgetStatus['categories'][number]>();
+
+    summaryRows.forEach((item) => {
+      merged.set(item.id, item);
+    });
+
+    budgets.forEach((item) => {
+      if (merged.has(item.id)) return;
+      merged.set(item.id, {
+        id: item.id,
+        category: item.category,
+        icon: 'category',
+        month: item.month || selectedMonth,
+        limit_amount: item.limit_amount,
+        current_spent: '0',
+        remaining: item.limit_amount,
+        usage_percent: 0,
+        near_limit: false,
+        exceeded: false,
+        exceeded_by: '0',
+        alert_message: '',
+      });
+    });
+
+    return Array.from(merged.values()).sort((a, b) => a.category.localeCompare(b.category));
+  }, [summary?.categories, budgets, selectedMonth]);
+
   const exceededCategories = useMemo(() => {
-    if (!summary?.categories?.length) return [];
-    return summary.categories.filter((item) => item.exceeded);
-  }, [summary]);
+    return categoryRows.filter((item) => item.exceeded);
+  }, [categoryRows]);
+
+  const nearLimitCount = useMemo(() => categoryRows.filter((item) => item.near_limit).length, [categoryRows]);
+  const exceededCount = useMemo(() => categoryRows.filter((item) => item.exceeded).length, [categoryRows]);
 
   const onSaveBudget = async () => {
     const parsedLimit = Number(newLimit.replace(/,/g, ''));
@@ -165,8 +196,9 @@ export default function BudgetPage() {
     setModalOpen(true);
   };
 
-  const onDeleteBudget = async (id: number) => {
-    Alert.alert('Delete Budget', 'Are you sure you want to delete this category budget?', [
+  const onDeleteBudget = async (id: number, categoryName?: string) => {
+    const detail = categoryName ? `Delete budget for ${categoryName}?` : 'Delete this category budget?';
+    Alert.alert('Confirm Delete', detail, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -307,19 +339,19 @@ export default function BudgetPage() {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Category Budgets</Text>
               <View style={styles.sectionMetaGroup}>
-                <Text style={styles.sectionMetaText}>Near {summary?.near_limit_count || 0}</Text>
-                <Text style={[styles.sectionMetaText, styles.sectionMetaDanger]}>Exceeded {summary?.exceeded_count || 0}</Text>
-                <Text style={styles.sectionCount}>{budgets.length}</Text>
+                <Text style={styles.sectionMetaText}>Near {nearLimitCount}</Text>
+                <Text style={[styles.sectionMetaText, styles.sectionMetaDanger]}>Exceeded {exceededCount}</Text>
+                <Text style={styles.sectionCount}>{categoryRows.length}</Text>
               </View>
             </View>
 
-            {!summary?.categories?.length ? (
+            {!categoryRows.length ? (
               <View style={styles.emptyCard}>
                 <MaterialIcons name="inventory-2" size={20} color="#94A3B8" />
                 <Text style={styles.emptyText}>No category budgets set for this month.</Text>
               </View>
             ) : (
-              summary.categories.map((item) => {
+              categoryRows.map((item) => {
                 const usage = item.usage_percent || 0;
                 const color = statusColor(usage);
                 return (
@@ -341,7 +373,7 @@ export default function BudgetPage() {
                           <TouchableOpacity onPress={() => openEditModal(item)} disabled={saving}>
                             <MaterialIcons name="edit" size={18} color="#2563EB" />
                           </TouchableOpacity>
-                          <TouchableOpacity onPress={() => onDeleteBudget(item.id)} disabled={saving}>
+                          <TouchableOpacity onPress={() => onDeleteBudget(item.id, item.category)} disabled={saving}>
                             <MaterialIcons name="delete-outline" size={18} color="#EF4444" />
                           </TouchableOpacity>
                         </View>
