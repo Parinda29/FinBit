@@ -1,19 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import TransactionCard from '../components/TransactionCard';
 import Colors from '../constants/colors';
-import { MaterialIcons } from '@expo/vector-icons';
 import CustomButton from '../components/CustomButton';
-import { fetchTransactions } from '../services/transactionService';
-
-interface Transaction {
-  id: number;
-  title: string;
-  category: string;
-  amount: number;
-  type: 'income' | 'expense';
-}
+import { fetchTransactions, TransactionItem } from '../services/transactionService';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background, padding: 16 },
@@ -32,18 +23,14 @@ const styles = StyleSheet.create({
 
 // initial dummy data replaced by API response
 const TransactionHistoryScreen: React.FC = () => {
-  const [transactionsData, setTransactionsData] = useState<Transaction[]>([]);
+  const [transactionsData, setTransactionsData] = useState<TransactionItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   const loadTransactions = async () => {
     setLoading(true);
     try {
-      const result = await fetchTransactions();
-      if (result.success) {
-        setTransactionsData(result.results || []);
-      } else {
-        console.warn('Failed to load transactions', result);
-      }
+      const rows = await fetchTransactions();
+      setTransactionsData(rows || []);
     } catch (e) {
       console.error('Error fetching transactions', e);
     } finally {
@@ -106,7 +93,7 @@ const TransactionHistoryScreen: React.FC = () => {
               <TransactionCard
                 title={item.title}
                 category={item.category}
-                amount={item.amount}
+                amount={Number(item.amount || 0)}
                 type={item.type}
               />
             )}

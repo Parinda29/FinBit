@@ -20,10 +20,10 @@ const HomeScreen: React.FC = () => {
     const loadSummary = async () => {
       try {
         const resp = await getSummary();
-        if (resp && resp.balance !== undefined) {
-          setBalance(resp.balance);
-          setIncome(resp.income);
-          setExpenses(resp.expense);
+        if (resp) {
+          setBalance(resp.net_balance || 0);
+          setIncome(resp.total_income || 0);
+          setExpenses(resp.total_expense || 0);
         }
       } catch (e) {
         console.warn('Failed to load summary', e);

@@ -14,6 +14,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LineChart, PieChart } from 'react-native-chart-kit';
 import Colors from '../constants/colors';
 import { fetchTransactions, TransactionItem } from '../services/transactionService';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 
 const PIE_COLORS = ['#7C3AED', '#0EA5E9', '#22C55E', '#F59E0B', '#EF4444', '#6366F1'];
 const screenWidth = Dimensions.get('window').width;
