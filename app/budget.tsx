@@ -1,6 +1,7 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -21,6 +22,7 @@ import {
   fetchBudgets,
   getBudgetSummary,
   saveBudget,
+  updateBudget,
 } from '../services/transactionService';
 
 const currency = (value: string | number) => {
@@ -36,8 +38,9 @@ const compactCurrency = (value: string | number) => {
 };
 
 const monthDefault = () => new Date().toISOString().slice(0, 7);
+const monthPattern = /^\d{4}-\d{2}$/;
 
-const CATEGORY_OPTIONS = ['Food', 'Transport', 'Bills', 'Shopping', 'Entertainment', 'Health', 'Other'];
+const CATEGORY_OPTIONS = ['Food', 'Transport', 'Bills', 'Shopping', 'Entertainment', 'Health', 'Utilities', 'Rent', 'Other'];
 
 const statusColor = (usage: number) => {
   if (usage > 100) return '#EF4444';
@@ -52,9 +55,12 @@ export default function BudgetPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingBudgetId, setEditingBudgetId] = useState<number | null>(null);
   const [newCategory, setNewCategory] = useState(CATEGORY_OPTIONS[0]);
+  const [customCategory, setCustomCategory] = useState('');
   const [newLimit, setNewLimit] = useState('');
   const [newMonth, setNewMonth] = useState(monthDefault());
 
@@ -81,18 +87,27 @@ export default function BudgetPage() {
     }, [loadBudgetData])
   );
 
-  const exceededAlertMessage = useMemo(() => {
-    if (!summary?.categories?.length) return null;
-    const exceeded = summary.categories.find((item) => item.exceeded);
-    if (!exceeded) return null;
-    const exceededBy = Math.max(0, Number(exceeded.current_spent) - Number(exceeded.limit_amount));
-    return `Your ${exceeded.category} spending exceeded by ${currency(exceededBy)}.`;
+  useEffect(() => {
+    if (!success) return;
+    const timer = setTimeout(() => setSuccess(null), 2200);
+    return () => clearTimeout(timer);
+  }, [success]);
+
+  const exceededCategories = useMemo(() => {
+    if (!summary?.categories?.length) return [];
+    return summary.categories.filter((item) => item.exceeded);
   }, [summary]);
 
   const onSaveBudget = async () => {
     const parsedLimit = Number(newLimit.replace(/,/g, ''));
-    if (!newCategory.trim()) {
+    const normalizedMonth = newMonth.trim();
+    const finalCategory = newCategory === 'Other' ? customCategory.trim() : newCategory.trim();
+    if (!finalCategory) {
       setError('Category is required.');
+      return;
+    }
+    if (!monthPattern.test(normalizedMonth)) {
+      setError('Month must be in YYYY-MM format.');
       return;
     }
     if (!Number.isFinite(parsedLimit) || parsedLimit <= 0) {
@@ -102,16 +117,28 @@ export default function BudgetPage() {
 
     setSaving(true);
     setError(null);
+    setSuccess(null);
     try {
-      await saveBudget({
-        category: newCategory,
-        limit_amount: parsedLimit,
-        month: newMonth,
-      });
+      if (editingBudgetId) {
+        await updateBudget(editingBudgetId, {
+          category: finalCategory,
+          limit_amount: parsedLimit,
+          month: normalizedMonth,
+        });
+      } else {
+        await saveBudget({
+          category: finalCategory,
+          limit_amount: parsedLimit,
+          month: normalizedMonth,
+        });
+      }
       setModalOpen(false);
+      setEditingBudgetId(null);
+      setCustomCategory('');
       setNewLimit('');
-      setSelectedMonth(newMonth);
+      setSelectedMonth(normalizedMonth);
       await loadBudgetData();
+      setSuccess(editingBudgetId ? 'Budget updated successfully.' : 'Budget created successfully.');
     } catch (saveError) {
       setError(getFriendlyErrorMessage(saveError, 'Failed to save budget.'));
     } finally {
@@ -119,23 +146,54 @@ export default function BudgetPage() {
     }
   };
 
+  const openCreateModal = () => {
+    setEditingBudgetId(null);
+    setNewCategory(CATEGORY_OPTIONS[0]);
+    setCustomCategory('');
+    setNewLimit('');
+    setNewMonth(selectedMonth);
+    setModalOpen(true);
+  };
+
+  const openEditModal = (item: BudgetStatus['categories'][number]) => {
+    setEditingBudgetId(item.id);
+    const matched = CATEGORY_OPTIONS.find((option) => option.toLowerCase() === item.category.toLowerCase());
+    setNewCategory(matched || 'Other');
+    setCustomCategory(matched ? '' : item.category);
+    setNewLimit(String(item.limit_amount || ''));
+    setNewMonth(selectedMonth);
+    setModalOpen(true);
+  };
+
   const onDeleteBudget = async (id: number) => {
-    setSaving(true);
-    setError(null);
-    try {
-      await deleteBudget(id);
-      await loadBudgetData();
-    } catch (deleteError) {
-      setError(getFriendlyErrorMessage(deleteError, 'Failed to delete budget.'));
-    } finally {
-      setSaving(false);
-    }
+    Alert.alert('Delete Budget', 'Are you sure you want to delete this category budget?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          setSaving(true);
+          setError(null);
+          setSuccess(null);
+          try {
+            await deleteBudget(id);
+            await loadBudgetData();
+            setSuccess('Budget deleted successfully.');
+          } catch (deleteError) {
+            setError(getFriendlyErrorMessage(deleteError, 'Failed to delete budget.'));
+          } finally {
+            setSaving(false);
+          }
+        },
+      },
+    ]);
   };
 
   const totalPercent = summary?.usage_percent || 0;
   const totalSpent = Number(summary?.total_spent || 0);
   const totalBudget = Number(summary?.total_budget || 0);
-  const totalRemaining = Math.max(0, Number(summary?.total_remaining || totalBudget - totalSpent));
+  const totalRemaining = Number(summary?.total_remaining || totalBudget - totalSpent);
+  const totalExceeded = Number(summary?.total_exceeded || 0);
 
   return (
     <View style={styles.container}>
@@ -221,8 +279,10 @@ export default function BudgetPage() {
 
               <View style={styles.summaryMetaRow}>
                 <View>
-                  <Text style={styles.summaryMetaLabel}>Remaining</Text>
-                  <Text style={styles.summaryMetaValue}>{currency(totalRemaining)}</Text>
+                  <Text style={styles.summaryMetaLabel}>{totalRemaining < 0 ? 'Over By' : 'Remaining'}</Text>
+                  <Text style={[styles.summaryMetaValue, totalRemaining < 0 ? styles.summaryMetaValueDanger : null]}>
+                    {currency(totalRemaining < 0 ? totalExceeded : totalRemaining)}
+                  </Text>
                 </View>
                 <View style={styles.summaryMetaRight}>
                   <Text style={styles.summaryMetaLabel}>Days Left</Text>
@@ -231,18 +291,26 @@ export default function BudgetPage() {
               </View>
             </View>
 
-            {!!exceededAlertMessage && (
+            {!!exceededCategories.length && (
               <View style={styles.alertCard}>
                 <View style={styles.alertIconWrap}>
                   <MaterialIcons name="warning-amber" size={16} color="#B91C1C" />
                 </View>
-                <Text style={styles.alertText}>{exceededAlertMessage}</Text>
+                <Text style={styles.alertText}>
+                  {exceededCategories
+                    .map((item) => `Your ${item.category} spending exceeded by ${currency(item.exceeded_by)}`)
+                    .join('\n')}
+                </Text>
               </View>
             )}
 
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Category Budgets</Text>
-              <Text style={styles.sectionCount}>{budgets.length}</Text>
+              <View style={styles.sectionMetaGroup}>
+                <Text style={styles.sectionMetaText}>Near {summary?.near_limit_count || 0}</Text>
+                <Text style={[styles.sectionMetaText, styles.sectionMetaDanger]}>Exceeded {summary?.exceeded_count || 0}</Text>
+                <Text style={styles.sectionCount}>{budgets.length}</Text>
+              </View>
             </View>
 
             {!summary?.categories?.length ? (
@@ -269,9 +337,14 @@ export default function BudgetPage() {
 
                       <View style={styles.categoryRight}>
                         <Text style={[styles.categoryPercent, { color }]}>{usage.toFixed(0)}%</Text>
-                        <TouchableOpacity onPress={() => onDeleteBudget(item.id)} disabled={saving}>
-                          <MaterialIcons name="delete-outline" size={18} color="#EF4444" />
-                        </TouchableOpacity>
+                        <View style={styles.categoryActionRow}>
+                          <TouchableOpacity onPress={() => openEditModal(item)} disabled={saving}>
+                            <MaterialIcons name="edit" size={18} color="#2563EB" />
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => onDeleteBudget(item.id)} disabled={saving}>
+                            <MaterialIcons name="delete-outline" size={18} color="#EF4444" />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
 
@@ -288,7 +361,11 @@ export default function BudgetPage() {
                     </View>
 
                     <Text style={[styles.categoryStatus, { color }]}>
-                      {item.exceeded ? 'Exceeded' : item.near_limit ? 'Near Limit' : 'On Track'}
+                      {item.exceeded
+                        ? `Exceeded by ${currency(item.exceeded_by)}`
+                        : item.near_limit
+                          ? 'Near Limit'
+                          : 'On Track'}
                     </Text>
                   </View>
                 );
@@ -297,17 +374,27 @@ export default function BudgetPage() {
           </>
         )}
 
+        {!!success && <Text style={styles.successText}>{success}</Text>}
         {!!error && <Text style={styles.errorText}>{error}</Text>}
       </ScrollView>
 
-      <TouchableOpacity style={styles.fab} onPress={() => setModalOpen(true)} activeOpacity={0.9}>
+      <TouchableOpacity style={styles.fab} onPress={openCreateModal} activeOpacity={0.9}>
         <MaterialIcons name="add" size={24} color={Colors.white} />
       </TouchableOpacity>
 
-      <Modal visible={modalOpen} transparent animationType="fade" onRequestClose={() => setModalOpen(false)}>
+      <Modal
+        visible={modalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setModalOpen(false);
+          setEditingBudgetId(null);
+          setCustomCategory('');
+        }}
+      >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Add Budget</Text>
+            <Text style={styles.modalTitle}>{editingBudgetId ? 'Edit Budget Limit' : 'Add Budget'}</Text>
 
             <Text style={styles.modalLabel}>Category</Text>
             <View style={styles.modalCategoryRow}>
@@ -316,6 +403,7 @@ export default function BudgetPage() {
                   key={item}
                   style={[styles.modalCategoryChip, newCategory === item && styles.modalCategoryChipActive]}
                   onPress={() => setNewCategory(item)}
+                  disabled={!!editingBudgetId}
                 >
                   <Text
                     style={[
@@ -328,6 +416,17 @@ export default function BudgetPage() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {newCategory === 'Other' && (
+              <TextInput
+                style={styles.modalInput}
+                value={customCategory}
+                onChangeText={setCustomCategory}
+                placeholder="Custom category name"
+                placeholderTextColor={Colors.textTertiary}
+                editable={!editingBudgetId}
+              />
+            )}
 
             <Text style={styles.modalLabel}>Limit Amount</Text>
             <TextInput
@@ -349,11 +448,18 @@ export default function BudgetPage() {
             />
 
             <View style={styles.modalActionRow}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setModalOpen(false)}>
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => {
+                  setModalOpen(false);
+                  setEditingBudgetId(null);
+                  setCustomCategory('');
+                }}
+              >
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalSave} onPress={onSaveBudget} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color={Colors.white} /> : <Text style={styles.modalSaveText}>Save</Text>}
+                {saving ? <ActivityIndicator size="small" color={Colors.white} /> : <Text style={styles.modalSaveText}>{editingBudgetId ? 'Update' : 'Save'}</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -588,6 +694,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
+  summaryMetaValueDanger: {
+    color: '#B91C1C',
+  },
   summaryMetaRight: {
     alignItems: 'flex-end',
   },
@@ -622,6 +731,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  sectionMetaGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  sectionMetaText: {
+    color: '#475569',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  sectionMetaDanger: {
+    color: '#B91C1C',
   },
   sectionTitle: {
     color: '#0F172A',
@@ -681,6 +803,10 @@ const styles = StyleSheet.create({
     gap: 4,
     marginLeft: 8,
   },
+  categoryActionRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   categoryIconWrap: {
     width: 28,
     height: 28,
@@ -711,6 +837,12 @@ const styles = StyleSheet.create({
   errorText: {
     marginTop: 8,
     color: Colors.error,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  successText: {
+    marginTop: 8,
+    color: '#166534',
     fontSize: 12,
     fontWeight: '700',
   },

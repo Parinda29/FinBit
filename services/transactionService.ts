@@ -56,6 +56,7 @@ export interface BudgetStatus {
   total_budget: string;
   total_spent: string;
   total_remaining: string;
+  total_exceeded: string;
   usage_percent: number;
   exceeded_count: number;
   near_limit_count: number;
@@ -71,6 +72,7 @@ export interface BudgetStatus {
     usage_percent: number;
     near_limit: boolean;
     exceeded: boolean;
+    exceeded_by: string;
     alert_message: string;
   }>;
 }

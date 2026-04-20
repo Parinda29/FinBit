@@ -72,7 +72,7 @@ export const isFinanceSms = (body: string): boolean => {
 export const extractAmount = (body: string): number | null => {
   // Improved regex to handle multiple comma formats:
   // Standard: 5,250.00 or 5250.00
-  // Indian: 1,23,456.78 (will normalize by removing all commas)
+  // Nepali: 1,23,456.78 (will normalize by removing all commas)
   const currencyAmountRegex = /(?:rs\.?|npr|inr)\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i;
   const primaryMatch = body.match(currencyAmountRegex);
 
